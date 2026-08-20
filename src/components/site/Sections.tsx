@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import heroCar from "@/assets/hero-car.jpg";
 import parts from "@/assets/parts.jpg";
+import carSuv from "@/assets/car-suv.jpg";
+import carPickup from "@/assets/car-pickup.jpg";
 import logo from "@/assets/logo.png.asset.json";
 
 export function Hero() {
@@ -72,12 +74,12 @@ export function Hero() {
 }
 
 const cars = [
-  { name: "Toyota Camry SE", year: "2020", price: "₦18,500,000", km: "42,000 km", fuel: "Petrol", gear: "Automatic" },
-  { name: "Lexus RX 350", year: "2019", price: "₦34,900,000", km: "58,300 km", fuel: "Petrol", gear: "Automatic" },
-  { name: "Honda Accord Sport", year: "2021", price: "₦22,750,000", km: "31,900 km", fuel: "Petrol", gear: "Automatic" },
-  { name: "Mercedes-Benz GLE 450", year: "2020", price: "₦59,000,000", km: "27,400 km", fuel: "Petrol", gear: "Automatic" },
-  { name: "Hyundai Elantra", year: "2022", price: "₦16,200,000", km: "19,800 km", fuel: "Petrol", gear: "Automatic" },
-  { name: "Ford Ranger Wildtrak", year: "2019", price: "₦28,400,000", km: "66,100 km", fuel: "Diesel", gear: "Manual" },
+  { name: "Toyota Camry SE", year: "2020", price: "₦18,500,000", km: "42,000 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
+  { name: "Lexus RX 350", year: "2019", price: "₦34,900,000", km: "58,300 km", fuel: "Petrol", gear: "Automatic", img: carSuv },
+  { name: "Honda Accord Sport", year: "2021", price: "₦22,750,000", km: "31,900 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
+  { name: "Mercedes-Benz GLE 450", year: "2020", price: "₦59,000,000", km: "27,400 km", fuel: "Petrol", gear: "Automatic", img: carSuv },
+  { name: "Hyundai Elantra", year: "2022", price: "₦16,200,000", km: "19,800 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
+  { name: "Ford Ranger Wildtrak", year: "2019", price: "₦28,400,000", km: "66,100 km", fuel: "Diesel", gear: "Manual", img: carPickup },
 ];
 
 export function Inventory() {
@@ -96,11 +98,11 @@ export function Inventory() {
           >
             <div className="relative">
               <img
-                src={heroCar}
+                src={c.img}
                 alt={c.name}
                 loading="lazy"
-                width={1920}
-                height={1088}
+                width={1600}
+                height={1000}
                 className="h-48 w-full object-cover"
               />
               <span className="absolute left-4 top-4 rounded-full bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-wider text-secondary-foreground">
