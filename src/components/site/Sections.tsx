@@ -9,12 +9,16 @@ import {
   Phone,
   Mail,
   MapPin,
+  Users,
+  Target,
+  Award,
+  Clock,
 } from "lucide-react";
 import heroCar from "@/assets/hero-car.jpg";
 import parts from "@/assets/parts.jpg";
 import carSuv from "@/assets/car-suv.jpg";
 import carPickup from "@/assets/car-pickup.jpg";
-import logo from "@/assets/logo.png.asset.json";
+import { Link } from "@tanstack/react-router";
 
 export function Hero() {
   return (
@@ -40,18 +44,18 @@ export function Hero() {
           honest pricing, inspection reports and nationwide delivery.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href="#inventory"
+          <Link
+            to="/services"
             className="rounded-full bg-primary px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-brand transition-transform hover:scale-[1.03]"
           >
             Browse cars for sale
-          </a>
-          <a
-            href="tel:+2348000000000"
+          </Link>
+          <Link
+            to="/contact"
             className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary-foreground/10"
           >
             <Phone className="h-4 w-4" /> Talk to sales
-          </a>
+          </Link>
         </div>
         <dl className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
           {[
@@ -119,12 +123,12 @@ export function Inventory() {
                 <li className="flex items-center gap-1.5"><Fuel className="h-4 w-4 shrink-0 text-primary" />{c.fuel}</li>
                 <li className="flex items-center gap-1.5"><Cog className="h-4 w-4 shrink-0 text-primary" />{c.gear}</li>
               </ul>
-              <a
-                href="#contact"
+              <Link
+                to="/contact"
                 className="mt-5 block rounded-full bg-primary px-5 py-3 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Request price &amp; inspection
-              </a>
+              </Link>
             </div>
           </article>
         ))}
@@ -165,12 +169,12 @@ export function Parts() {
               </li>
             ))}
           </ul>
-          <a
-            href="#contact"
+          <Link
+            to="/contact"
             className="mt-8 inline-block rounded-full bg-brand-ink px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
           >
             Request a part
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -202,7 +206,54 @@ export function WhyUs() {
   );
 }
 
-export function Contact() {
+export function AboutStory() {
+  const values = [
+    { icon: Users, t: "Customer first", d: "We listen to your budget and needs before recommending any car or part." },
+    { icon: Target, t: "Transparency", d: "Every price, history report and inspection detail is shared upfront." },
+    { icon: Award, t: "Quality assured", d: "We only stock vehicles and parts that meet our inspection standards." },
+    { icon: Clock, t: "Always available", d: "Our team is ready to answer questions and arrange delivery six days a week." },
+  ];
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+        <div>
+          <SectionHead
+            eyebrow="About us"
+            title="Your trusted partner for cars & auto parts"
+            copy="SEO Autos Investment Limited started with one goal — make buying cars and auto parts in Nigeria simple, safe and stress-free."
+            align="left"
+          />
+          <p className="mt-6 text-muted-foreground">
+            Over the years we have built a network of trusted dealers, mechanics and logistics partners so our customers get verified vehicles, genuine parts and reliable delivery in every state. We do not hide fees, we do not sell stories, and we do not compromise on quality.
+          </p>
+          <p className="mt-4 text-muted-foreground">
+            Whether you are upgrading your ride, replacing a part or sourcing for a fleet, our team is here to guide you from enquiry to handover.
+          </p>
+          <Link
+            to="/contact"
+            className="mt-8 inline-block rounded-full bg-primary px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-brand transition-transform hover:scale-[1.03]"
+          >
+            Work with us
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {values.map(({ icon: Icon, t, d }) => (
+            <div key={t} className="rounded-xl border border-border bg-card p-6 shadow-card">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
+                <Icon className="h-6 w-6 text-primary" />
+              </span>
+              <h3 className="mt-4 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function ContactSection() {
   return (
     <section id="contact" className="bg-brand-ink py-20">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.1fr]">
@@ -251,22 +302,6 @@ export function Contact() {
         </form>
       </div>
     </section>
-  );
-}
-
-export function Footer() {
-  return (
-    <footer className="border-t border-border bg-background py-8">
-      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <img src={logo.url} alt="" width={40} height={40} loading="lazy" className="h-10 w-10 shrink-0 object-contain" />
-          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            SEO Autos Investment Limited
-          </p>
-        </div>
-        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()}</p>
-      </div>
-    </footer>
   );
 }
 
