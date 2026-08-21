@@ -43,20 +43,15 @@ export function Hero() {
           SEO Autos Investment Limited sells verified vehicles and OEM-grade parts, with
           honest pricing, inspection reports and nationwide delivery.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            to="/services"
-            className="rounded-full bg-primary px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-brand transition-transform hover:scale-[1.03]"
-          >
-            Browse cars for sale
-          </Link>
-          <Link
-            to="/contact"
-            className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary-foreground/10"
-          >
-            <Phone className="h-4 w-4" /> Talk to sales
-          </Link>
+        <div className="mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
+          <a href="tel:+2348138946058" className="inline-flex items-center gap-2 text-base font-bold">
+            <Phone className="h-5 w-5 text-secondary" /> +234 813 894 6058
+          </a>
+          <a href="mailto:blessedsolo6614@gmail.com" className="inline-flex items-center gap-2 text-base font-bold break-all">
+            <Mail className="h-5 w-5 text-secondary" /> blessedsolo6614@gmail.com
+          </a>
         </div>
+
         <dl className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
           {[
             ["1,200+", "Cars sold"],
