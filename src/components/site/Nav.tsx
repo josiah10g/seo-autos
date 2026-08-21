@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import logo from "@/assets/logo.png.asset.json";
 
@@ -45,13 +45,8 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <a
-            href="tel:+2348138946058"
-            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary"
-          >
-            <Phone className="h-4 w-4" /> +234 813 894 6058
-          </a>
         </nav>
+
 
         <button
           type="button"
@@ -77,15 +72,8 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <a
-            href="tel:+2348138946058"
-            onClick={() => setOpen(false)}
-            className="mt-4 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide text-primary"
-          >
-            <Phone className="h-4 w-4" /> +234 813 894 6058
-          </a>
-
         </nav>
+
       )}
     </header>
   );
