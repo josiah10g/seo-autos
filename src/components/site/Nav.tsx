@@ -45,13 +45,8 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <a
-            href="tel:+2348138946058"
-            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary"
-          >
-            <Phone className="h-4 w-4" /> +234 813 894 6058
-          </a>
         </nav>
+
 
         <button
           type="button"
