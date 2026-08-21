@@ -10,7 +10,11 @@ export function Footer() {
             SEO Autos Investment Limited
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()}</p>
+        <div className="text-right text-xs text-muted-foreground">
+          <a href="tel:+2348138946058" className="block font-semibold text-foreground">+234 813 894 6058</a>
+          <p className="mt-1">© {new Date().getFullYear()}</p>
+        </div>
+
       </div>
     </footer>
   );

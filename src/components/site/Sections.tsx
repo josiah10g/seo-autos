@@ -261,8 +261,9 @@ export function ContactSection() {
             same day.
           </p>
           <ul className="mt-8 space-y-4 text-sm text-primary-foreground/85">
-            <li className="flex items-center gap-3"><Phone className="h-5 w-5 shrink-0 text-secondary" /> +234 800 000 0000</li>
-            <li className="flex items-center gap-3"><Mail className="h-5 w-5 shrink-0 text-secondary" /> sales@seoautos.com</li>
+            <li className="flex items-center gap-3"><Phone className="h-5 w-5 shrink-0 text-secondary" /> <a href="tel:+2348138946058">+234 813 894 6058</a></li>
+            <li className="flex items-center gap-3"><Mail className="h-5 w-5 shrink-0 text-secondary" /> <a href="mailto:blessedsolo6614@gmail.com" className="break-all">blessedsolo6614@gmail.com</a></li>
+
             <li className="flex items-center gap-3"><MapPin className="h-5 w-5 shrink-0 text-secondary" /> Lagos, Nigeria</li>
           </ul>
         </div>
@@ -271,12 +272,13 @@ export function ContactSection() {
           onSubmit={(e) => e.preventDefault()}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name" placeholder="Josiah Adeyemi" />
+            <Field label="Full name" placeholder="Type your full name here" />
             <Field label="Phone" placeholder="+234 ..." type="tel" />
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Email" placeholder="you@email.com" type="email" />
+            <Field label="Gmail" placeholder="yourname@gmail.com" type="email" />
             <Field label="Budget" placeholder="₦20,000,000" />
+
           </div>
           <label className="mt-4 block">
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
