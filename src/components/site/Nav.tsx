@@ -45,12 +45,12 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <Link
-            to="/contact"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-brand transition-transform hover:scale-[1.03]"
+          <a
+            href="tel:+2348138946058"
+            className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary"
           >
-            <Phone className="h-4 w-4" /> Get a Quote
-          </Link>
+            <Phone className="h-4 w-4" /> +234 813 894 6058
+          </a>
         </nav>
 
         <button
@@ -61,6 +61,7 @@ export function Nav() {
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
+
       </div>
 
       {open && (
@@ -76,13 +77,14 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <Link
-            to="/contact"
+          <a
+            href="tel:+2348138946058"
             onClick={() => setOpen(false)}
-            className="mt-4 block rounded-full bg-primary px-5 py-3 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground"
+            className="mt-4 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide text-primary"
           >
-            Get a Quote
-          </Link>
+            <Phone className="h-4 w-4" /> +234 813 894 6058
+          </a>
+
         </nav>
       )}
     </header>
