@@ -3,7 +3,7 @@ import { Inventory, Parts } from "@/components/site/Sections";
 
 const title = "Cars & Parts Services | SEO Autos Investment Limited";
 const description =
-  "Browse inspected cars for sale and order genuine OEM-grade auto parts, with inspection reports and nationwide delivery.";
+  "Browse inspected cars for sale and order genuine OEM-grade auto parts, with inspection reports and honest pricing.";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -27,7 +27,7 @@ function ServicesPage() {
             Cars for sale &amp; parts supply
           </h1>
           <p className="mt-4 max-w-2xl text-primary-foreground/75">
-            Vehicle sales, parts sourcing, inspection support and nationwide logistics — all under one roof.
+            Vehicle sales, parts sourcing and inspection support — all from one yard in Lagos.
           </p>
         </div>
       </section>
