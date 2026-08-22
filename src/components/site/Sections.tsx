@@ -33,18 +33,18 @@ export function Hero() {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-brand-ink via-brand-ink/80 to-transparent" />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:py-36">
-        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-secondary-foreground">
+        <span className="page-enter inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-secondary-foreground">
           Your reliable plug
         </span>
-        <h1 className="mt-6 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl">
+        <h1 style={{ animationDelay: "90ms" }} className="page-enter mt-6 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl">
           Quality cars &amp; genuine
           <span className="text-secondary"> auto parts</span> you can trust
         </h1>
-        <p className="mt-5 max-w-xl text-base text-primary-foreground/80 sm:text-lg">
+        <p style={{ animationDelay: "180ms" }} className="page-enter mt-5 max-w-xl text-base text-primary-foreground/80 sm:text-lg">
           SEO Autos Investment Limited sells verified vehicles and OEM-grade parts, with
-          honest pricing, inspection reports and nationwide delivery.
+          honest pricing and clear inspection reports on every deal.
         </p>
-        <div className="mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
+        <div style={{ animationDelay: "270ms" }} className="page-enter mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
           <a href="tel:+2348138946058" className="inline-flex items-center gap-2 text-base font-bold">
             <Phone className="h-5 w-5 text-secondary" /> +234 813 894 6058
           </a>
@@ -53,11 +53,11 @@ export function Hero() {
           </a>
         </div>
 
-        <dl className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
+        <dl style={{ animationDelay: "360ms" }} className="page-enter mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
           {[
             ["1,200+", "Cars sold"],
             ["15k+", "Parts in stock"],
-            ["36", "States delivered"],
+            ["9", "Years in business"],
             ["4.9/5", "Buyer rating"],
           ].map(([v, k]) => (
             <div key={k}>
@@ -185,7 +185,7 @@ export function WhyUs() {
     { icon: ShieldCheck, t: "Verified papers", d: "Clean documentation and customs clearance on every vehicle." },
     { icon: BadgeCheck, t: "Honest pricing", d: "One clear price. No hidden charges after agreement." },
     { icon: Wrench, t: "After-sales support", d: "Servicing advice and parts supply long after you buy." },
-    { icon: Truck, t: "Nationwide delivery", d: "Safe logistics to your city, tracked from our yard to you." },
+    { icon: Truck, t: "Pickup & handover", d: "Collect from our Lagos yard, or we arrange transport you approve first." },
   ];
   return (
     <section id="why" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
@@ -212,7 +212,7 @@ export function AboutStory() {
     { icon: Users, t: "Customer first", d: "We listen to your budget and needs before recommending any car or part." },
     { icon: Target, t: "Transparency", d: "Every price, history report and inspection detail is shared upfront." },
     { icon: Award, t: "Quality assured", d: "We only stock vehicles and parts that meet our inspection standards." },
-    { icon: Clock, t: "Always available", d: "Our team is ready to answer questions and arrange delivery six days a week." },
+    { icon: Clock, t: "Always available", d: "You can reach our team six days a week, from 8am till evening." },
   ];
 
   return (
@@ -226,7 +226,7 @@ export function AboutStory() {
             align="left"
           />
           <p className="mt-6 text-muted-foreground">
-            Over the years we have built a network of trusted dealers, mechanics and logistics partners so our customers get verified vehicles, genuine parts and reliable delivery in every state. We do not hide fees, we do not sell stories, and we do not compromise on quality.
+            Over the years we have built a network of trusted dealers and mechanics around Lagos, so our customers get verified vehicles and genuine parts without the usual runaround. We do not hide fees, we do not sell stories, and we do not compromise on quality.
           </p>
           <p className="mt-4 text-muted-foreground">
             Whether you are upgrading your ride, replacing a part or sourcing for a fleet, our team is here to guide you from enquiry to handover.

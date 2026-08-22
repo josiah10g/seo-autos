@@ -3,7 +3,7 @@ import { AboutStory, WhyUs } from "@/components/site/Sections";
 
 const title = "About Us | SEO Autos Investment Limited";
 const description =
-  "Learn how SEO Autos Investment Limited became a trusted plug for verified vehicles, genuine auto parts and reliable nationwide delivery in Nigeria.";
+  "Learn how SEO Autos Investment Limited became a trusted plug for verified vehicles, genuine auto parts and straight dealing in Lagos, Nigeria.";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
