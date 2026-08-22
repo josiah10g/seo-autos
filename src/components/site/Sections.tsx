@@ -19,6 +19,7 @@ import parts from "@/assets/parts.jpg";
 import carSuv from "@/assets/car-suv.jpg";
 import carPickup from "@/assets/car-pickup.jpg";
 import { Link } from "@tanstack/react-router";
+import { Reveal } from "@/components/site/Reveal";
 
 export function Hero() {
   return (
@@ -90,9 +91,9 @@ export function Inventory() {
         copy="Every vehicle is inspected, documented and priced transparently. Reserve with a call."
       />
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {cars.map((c) => (
+        {cars.map((c, i) => (
+          <Reveal key={c.name} delay={i * 80}>
           <article
-            key={c.name}
             className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1"
           >
             <div className="relative">
@@ -126,6 +127,7 @@ export function Inventory() {
               </Link>
             </div>
           </article>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -136,6 +138,7 @@ export function Parts() {
   return (
     <section id="parts" className="bg-muted py-20">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
+        <Reveal>
         <img
           src={parts}
           alt="Brake discs, filters, spark plugs and an alternator"
@@ -144,6 +147,7 @@ export function Parts() {
           height={900}
           className="rounded-xl border border-border bg-card object-cover shadow-card"
         />
+        </Reveal>
         <div>
           <SectionHead
             eyebrow="Parts department"
@@ -187,14 +191,16 @@ export function WhyUs() {
     <section id="why" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <SectionHead eyebrow="Why SEO Autos" title="Built on trust, not talk" copy="Thousands of buyers rely on us as their plug for quality cars and parts." />
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map(({ icon: Icon, t, d }) => (
-          <div key={t} className="rounded-xl border border-border bg-card p-6 shadow-card">
+        {items.map(({ icon: Icon, t, d }, i) => (
+          <Reveal key={t} delay={i * 80}>
+          <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
               <Icon className="h-6 w-6 text-primary" />
             </span>
             <h3 className="mt-4 font-display text-xl uppercase tracking-wide text-card-foreground">{t}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{d}</p>
           </div>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -233,14 +239,16 @@ export function AboutStory() {
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {values.map(({ icon: Icon, t, d }) => (
-            <div key={t} className="rounded-xl border border-border bg-card p-6 shadow-card">
+          {values.map(({ icon: Icon, t, d }, i) => (
+            <Reveal key={t} delay={i * 80}>
+            <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
                 <Icon className="h-6 w-6 text-primary" />
               </span>
               <h3 className="mt-4 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</h3>
               <p className="mt-2 text-sm text-muted-foreground">{d}</p>
             </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -327,12 +335,12 @@ function SectionHead({
   align?: "center" | "left";
 }) {
   return (
-    <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-xl"}>
+    <Reveal className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-xl"}>
       <span className="text-xs font-bold uppercase tracking-[0.25em] text-primary">{eyebrow}</span>
       <h2 className="mt-3 font-display text-3xl font-bold uppercase leading-tight tracking-tight text-foreground sm:text-4xl">
         {title}
       </h2>
       <p className="mt-3 text-muted-foreground">{copy}</p>
-    </div>
+    </Reveal>
   );
 }
