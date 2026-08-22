@@ -37,12 +37,11 @@ export function Hero() {
           Your reliable plug
         </span>
         <h1 style={{ animationDelay: "90ms" }} className="page-enter mt-6 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl">
-          Quality cars &amp; genuine
-          <span className="text-secondary"> auto parts</span> you can trust
+          Quality cars &amp; auto
+          <span className="text-secondary"> parts</span> you can trust
         </h1>
         <p style={{ animationDelay: "180ms" }} className="page-enter mt-5 max-w-xl text-base text-primary-foreground/80 sm:text-lg">
-          SEO Autos Investment Limited sells verified vehicles and OEM-grade parts, with
-          honest pricing and clear inspection reports on every deal.
+          SEO Autos Investment Limited connects buyers with quality vehicles and auto parts at straightforward prices.
         </p>
         <div style={{ animationDelay: "270ms" }} className="page-enter mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
           <a href="tel:+2348138946058" className="inline-flex items-center gap-2 text-base font-bold">
@@ -52,84 +51,40 @@ export function Hero() {
             <Mail className="h-5 w-5 text-secondary" /> blessedsolo6614@gmail.com
           </a>
         </div>
-
-        <dl style={{ animationDelay: "360ms" }} className="page-enter mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
-          {[
-            ["1,200+", "Cars sold"],
-            ["15k+", "Parts in stock"],
-            ["9", "Years in business"],
-            ["4.9/5", "Buyer rating"],
-          ].map(([v, k]) => (
-            <div key={k}>
-              <dt className="font-display text-3xl text-secondary">{v}</dt>
-              <dd className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
-                {k}
-              </dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </section>
   );
 }
-
-const cars = [
-  { name: "Toyota Camry SE", year: "2020", price: "₦18,500,000", km: "42,000 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
-  { name: "Lexus RX 350", year: "2019", price: "₦34,900,000", km: "58,300 km", fuel: "Petrol", gear: "Automatic", img: carSuv },
-  { name: "Honda Accord Sport", year: "2021", price: "₦22,750,000", km: "31,900 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
-  { name: "Mercedes-Benz GLE 450", year: "2020", price: "₦59,000,000", km: "27,400 km", fuel: "Petrol", gear: "Automatic", img: carSuv },
-  { name: "Hyundai Elantra", year: "2022", price: "₦16,200,000", km: "19,800 km", fuel: "Petrol", gear: "Automatic", img: heroCar },
-  { name: "Ford Ranger Wildtrak", year: "2019", price: "₦28,400,000", km: "66,100 km", fuel: "Diesel", gear: "Manual", img: carPickup },
-];
 
 export function Inventory() {
   return (
     <section id="inventory" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <SectionHead
         eyebrow="Inventory"
-        title="Cars available now"
-        copy="Every vehicle is inspected, documented and priced transparently. Reserve with a call."
+        title="Cars for sale"
+        copy="Our stock changes often. Call or send an enquiry to see what is available right now."
       />
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {cars.map((c, i) => (
-          <Reveal key={c.name} delay={i * 80}>
-          <article
-            className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-transform hover:-translate-y-1"
-          >
-            <div className="relative">
-              <img
-                src={c.img}
-                alt={c.name}
-                loading="lazy"
-                width={1600}
-                height={1000}
-                className="h-48 w-full object-cover"
-              />
-              <span className="absolute left-4 top-4 rounded-full bg-secondary px-3 py-1 text-xs font-bold uppercase tracking-wider text-secondary-foreground">
-                {c.year}
-              </span>
-            </div>
-            <div className="p-5">
-              <h3 className="font-display text-2xl uppercase tracking-wide text-card-foreground">
-                {c.name}
-              </h3>
-              <p className="mt-1 text-xl font-bold text-primary">{c.price}</p>
-              <ul className="mt-4 grid grid-cols-3 gap-2 text-xs font-semibold text-muted-foreground">
-                <li className="flex items-center gap-1.5"><Gauge className="h-4 w-4 shrink-0 text-primary" />{c.km}</li>
-                <li className="flex items-center gap-1.5"><Fuel className="h-4 w-4 shrink-0 text-primary" />{c.fuel}</li>
-                <li className="flex items-center gap-1.5"><Cog className="h-4 w-4 shrink-0 text-primary" />{c.gear}</li>
-              </ul>
-              <Link
-                to="/contact"
-                className="mt-5 block rounded-full bg-primary px-5 py-3 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                Request price &amp; inspection
-              </Link>
-            </div>
-          </article>
-          </Reveal>
-        ))}
-      </div>
+      <Reveal>
+        <div className="mt-10 rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-card">
+          <p className="text-muted-foreground">
+            Current listings will be posted here. For now, reach us directly and we will share what we have in stock.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="tel:+2348138946058"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Phone className="h-4 w-4" /> Call +234 813 894 6058
+            </a>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-muted"
+            >
+              Send enquiry
+            </Link>
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
@@ -151,8 +106,8 @@ export function Parts() {
         <div>
           <SectionHead
             eyebrow="Parts department"
-            title="Genuine parts, no guesswork"
-            copy="From brakes and filters to engines and electricals — we source original and OEM-grade parts for Toyota, Lexus, Honda, Mercedes, Ford and more."
+            title="Auto parts supply"
+            copy="We help you source parts for Toyota, Lexus, Honda, Mercedes, Ford and other common brands. Tell us what you need and we will look into availability and price."
             align="left"
           />
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -182,14 +137,14 @@ export function Parts() {
 
 export function WhyUs() {
   const items = [
-    { icon: ShieldCheck, t: "Verified papers", d: "Clean documentation and customs clearance on every vehicle." },
-    { icon: BadgeCheck, t: "Honest pricing", d: "One clear price. No hidden charges after agreement." },
-    { icon: Wrench, t: "After-sales support", d: "Servicing advice and parts supply long after you buy." },
-    { icon: Truck, t: "Pickup & handover", d: "Collect from our Lagos yard, or we arrange transport you approve first." },
+    { icon: ShieldCheck, t: "Paper check", d: "We encourage buyers to review vehicle documents before payment." },
+    { icon: BadgeCheck, t: "Straight pricing", d: "We agree on one clear price with no surprise charges." },
+    { icon: Wrench, t: "Parts support", d: "Need a part after purchase? Send us a request and we will help source it." },
+    { icon: Truck, t: "Local handover", d: "Pick up your purchase in Lagos, or arrange your own transport." },
   ];
   return (
     <section id="why" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-      <SectionHead eyebrow="Why SEO Autos" title="Built on trust, not talk" copy="Thousands of buyers rely on us as their plug for quality cars and parts." />
+      <SectionHead eyebrow="Why SEO Autos" title="Straight dealing, clear terms" copy="We focus on honest communication and making sure you know what you are paying for." />
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ icon: Icon, t, d }, i) => (
           <Reveal key={t} delay={i * 80}>
@@ -210,9 +165,9 @@ export function WhyUs() {
 export function AboutStory() {
   const values = [
     { icon: Users, t: "Customer first", d: "We listen to your budget and needs before recommending any car or part." },
-    { icon: Target, t: "Transparency", d: "Every price, history report and inspection detail is shared upfront." },
-    { icon: Award, t: "Quality assured", d: "We only stock vehicles and parts that meet our inspection standards." },
-    { icon: Clock, t: "Always available", d: "You can reach our team six days a week, from 8am till evening." },
+    { icon: Target, t: "Transparency", d: "We share price and condition details clearly before you decide." },
+    { icon: Award, t: "Quality focus", d: "We only offer vehicles and parts we are happy to stand behind." },
+    { icon: Clock, t: "Reachable", d: "Contact us by phone or email and we will get back to you." },
   ];
 
   return (
@@ -221,15 +176,15 @@ export function AboutStory() {
         <div>
           <SectionHead
             eyebrow="About us"
-            title="Your trusted partner for cars & auto parts"
-            copy="SEO Autos Investment Limited started with one goal — make buying cars and auto parts in Nigeria simple, safe and stress-free."
+            title="Your partner for cars & auto parts"
+            copy="SEO Autos Investment Limited helps buyers in Lagos find quality vehicles and auto parts without the usual back-and-forth."
             align="left"
           />
           <p className="mt-6 text-muted-foreground">
-            Over the years we have built a network of trusted dealers and mechanics around Lagos, so our customers get verified vehicles and genuine parts without the usual runaround. We do not hide fees, we do not sell stories, and we do not compromise on quality.
+            We keep things simple: tell us what you need, we check what is available, and we agree on a fair price. No hidden fees, no stories.
           </p>
           <p className="mt-4 text-muted-foreground">
-            Whether you are upgrading your ride, replacing a part or sourcing for a fleet, our team is here to guide you from enquiry to handover.
+            Whether you are buying one car, replacing a part, or sourcing for a fleet, our team will guide you from enquiry to handover.
           </p>
           <Link
             to="/contact"
@@ -265,8 +220,7 @@ export function ContactSection() {
             Ready to buy? <span className="text-secondary">Let's talk.</span>
           </h2>
           <p className="mt-4 max-w-md text-primary-foreground/75">
-            Tell us the car or part you need and your budget. Our sales team responds the
-            same day.
+            Tell us the car or part you need and your budget. We will get back to you as soon as possible.
           </p>
           <ul className="mt-8 space-y-4 text-sm text-primary-foreground/85">
             <li className="flex items-center gap-3"><Phone className="h-5 w-5 shrink-0 text-secondary" /> <a href="tel:+2348138946058">+234 813 894 6058</a></li>
