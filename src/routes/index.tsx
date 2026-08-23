@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Hero, WhyUs } from "@/components/site/Sections";
 
-const title = "SEO Autos Investment Limited | Quality Cars & Auto Parts";
+const title = "SEO Autos Investment Limited | Honda & Acura Specialists";
 const description =
-  "Buy inspected cars and genuine auto parts from SEO Autos Investment Limited — honest pricing, verified papers and straight answers.";
+  "SEO Autos Investment Limited sells and buys Honda and Acura vehicles, swaps and installs engines, gearboxes and accessories, and provides car repair services in Lagos, Nigeria.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,3 +25,4 @@ function Index() {
     </>
   );
 }
+

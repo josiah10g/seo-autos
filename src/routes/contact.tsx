@@ -3,7 +3,7 @@ import { ContactSection } from "@/components/site/Sections";
 
 const title = "Contact Us | SEO Autos Investment Limited";
 const description =
-  "Call, email or send an enquiry to SEO Autos Investment Limited for cars and genuine auto parts. Same-day response from our sales team.";
+  "Call or email SEO Autos Investment Limited for Honda and Acura sales, engine and gearbox swaps, accessories and car repairs in Lagos, Nigeria.";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -27,7 +27,7 @@ function ContactPage() {
             We're ready to help
           </h1>
           <p className="mt-4 max-w-2xl text-muted-foreground">
-            Share the car or part you need with your budget and we'll get back to you the same day.
+            Tell us what you need — a Honda or Acura vehicle, an engine or gearbox swap, accessories, or a repair — and we will get back to you.
           </p>
         </div>
       </section>
@@ -35,3 +35,4 @@ function ContactPage() {
     </>
   );
 }
+
