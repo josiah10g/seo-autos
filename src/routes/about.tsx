@@ -3,7 +3,7 @@ import { AboutStory, WhyUs } from "@/components/site/Sections";
 
 const title = "About Us | SEO Autos Investment Limited";
 const description =
-  "Learn how SEO Autos Investment Limited became a trusted plug for verified vehicles, genuine auto parts and straight dealing in Lagos, Nigeria.";
+  "SEO Autos Investment Limited is a Honda and Acura specialist in Lagos, Nigeria. We sell and buy vehicles, swap and install engines, gearboxes and accessories, and offer car repair services.";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -23,7 +23,7 @@ function AboutPage() {
       <PageHeader
         eyebrow="About us"
         title="Who we are"
-        copy="A car and auto parts business built on verified stock, honest pricing and long-term customer relationships."
+        copy="A Honda and Acura specialist in Lagos focused on straight dealing, fair prices and reliable work."
       />
       <AboutStory />
       <WhyUs />
@@ -44,3 +44,4 @@ function PageHeader({ eyebrow, title, copy }: { eyebrow: string; title: string; 
     </section>
   );
 }
+

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Inventory, Parts } from "@/components/site/Sections";
 
-const title = "Cars & Parts Services | SEO Autos Investment Limited";
+const title = "Services | SEO Autos Investment Limited";
 const description =
-  "Browse inspected cars for sale and order genuine OEM-grade auto parts, with inspection reports and honest pricing.";
+  "Honda and Acura sales, buy, swap and installation of engines, gearboxes and accessories, plus general car repair services in Lagos, Nigeria.";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -24,10 +24,10 @@ function ServicesPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <span className="text-xs font-bold uppercase tracking-[0.25em] text-secondary">Services</span>
           <h1 className="mt-3 font-display text-4xl font-bold uppercase leading-tight tracking-tight text-primary-foreground sm:text-5xl">
-            Cars for sale &amp; parts supply
+            Honda &amp; Acura specialists
           </h1>
           <p className="mt-4 max-w-2xl text-primary-foreground/75">
-            Vehicle sales, parts sourcing and inspection support — all from one yard in Lagos.
+            We sell and buy Honda and Acura vehicles, swap and install engines, gearboxes and accessories, and handle general car repairs.
           </p>
         </div>
       </section>
@@ -36,3 +36,4 @@ function ServicesPage() {
     </>
   );
 }
+

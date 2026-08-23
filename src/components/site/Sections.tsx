@@ -3,9 +3,6 @@ import {
   Wrench,
   Truck,
   BadgeCheck,
-  Gauge,
-  Fuel,
-  Cog,
   Phone,
   Mail,
   MapPin,
@@ -13,11 +10,13 @@ import {
   Target,
   Award,
   Clock,
+  Settings,
+  RefreshCcw,
+  CircleDollarSign,
+  Car,
 } from "lucide-react";
 import heroCar from "@/assets/hero-car.jpg";
 import parts from "@/assets/parts.jpg";
-import carSuv from "@/assets/car-suv.jpg";
-import carPickup from "@/assets/car-pickup.jpg";
 import { Link } from "@tanstack/react-router";
 import { Reveal } from "@/components/site/Reveal";
 
@@ -34,14 +33,14 @@ export function Hero() {
       <div className="absolute inset-0 bg-gradient-to-r from-brand-ink via-brand-ink/80 to-transparent" />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:py-36">
         <span className="page-enter inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-secondary-foreground">
-          Your reliable plug
+          Honda & Acura specialists
         </span>
         <h1 style={{ animationDelay: "90ms" }} className="page-enter mt-6 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl">
-          Quality cars &amp; auto
-          <span className="text-secondary"> parts</span> you can trust
+          Sell, buy, swap &
+          <span className="text-secondary"> install</span> with confidence
         </h1>
         <p style={{ animationDelay: "180ms" }} className="page-enter mt-5 max-w-xl text-base text-primary-foreground/80 sm:text-lg">
-          SEO Autos Investment Limited connects buyers with quality vehicles and auto parts at straightforward prices.
+          SEO Autos Investment Limited handles Honda and Acura vehicles, engines, gearboxes, accessories and general car repairs in Lagos.
         </p>
         <div style={{ animationDelay: "270ms" }} className="page-enter mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
           <a href="tel:+2348138946058" className="inline-flex items-center gap-2 text-base font-bold">
@@ -61,13 +60,13 @@ export function Inventory() {
     <section id="inventory" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <SectionHead
         eyebrow="Inventory"
-        title="Cars for sale"
-        copy="Our stock changes often. Call or send an enquiry to see what is available right now."
+        title="Honda & Acura vehicles"
+        copy="We sell and buy Honda and Acura vehicles. Stock changes often, so call or send an enquiry to see what is available right now."
       />
       <Reveal>
         <div className="mt-10 rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-card">
           <p className="text-muted-foreground">
-            Current listings will be posted here. For now, reach us directly and we will share what we have in stock.
+            Current Honda and Acura listings will be posted here. For now, reach us directly and we will share what we have in stock.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -90,35 +89,40 @@ export function Inventory() {
 }
 
 export function Parts() {
+  const items = [
+    { icon: RefreshCcw, t: "Engine swap", d: "Remove and replace Honda/Acura engines with matched units." },
+    { icon: Settings, t: "Gearbox work", d: "Swap and install automatic and manual gearboxes." },
+    { icon: Car, t: "Accessories", d: "Body, interior, electrical and performance accessories." },
+    { icon: Wrench, t: "Car repairs", d: "General diagnostics, servicing and mechanical repairs." },
+  ];
+
   return (
     <section id="parts" className="bg-muted py-20">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
         <Reveal>
-        <img
-          src={parts}
-          alt="Brake discs, filters, spark plugs and an alternator"
-          loading="lazy"
-          width={1200}
-          height={900}
-          className="rounded-xl border border-border bg-card object-cover shadow-card"
-        />
+          <img
+            src={parts}
+            alt="Engine, gearbox and auto parts on a workbench"
+            loading="lazy"
+            width={1200}
+            height={900}
+            className="rounded-xl border border-border bg-card object-cover shadow-card"
+          />
         </Reveal>
         <div>
           <SectionHead
-            eyebrow="Parts department"
-            title="Auto parts supply"
-            copy="We help you source parts for Toyota, Lexus, Honda, Mercedes, Ford and other common brands. Tell us what you need and we will look into availability and price."
+            eyebrow="Parts & repairs"
+            title="Engines, gearboxes & accessories"
+            copy="We swap and install engines and gearboxes, supply accessories and carry out general car repairs for Honda and Acura vehicles."
             align="left"
           />
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-            {[
-              ["Engine & transmission", "Blocks, gearboxes, mounts"],
-              ["Brakes & suspension", "Pads, discs, shocks, arms"],
-              ["Electricals", "Alternators, starters, sensors"],
-              ["Body & interior", "Bumpers, lights, mirrors"],
-            ].map(([t, d]) => (
+            {items.map(({ icon: Icon, t, d }) => (
               <li key={t} className="rounded-lg border border-border bg-card p-4">
-                <p className="font-display text-lg uppercase tracking-wide text-card-foreground">{t}</p>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                  <Icon className="h-5 w-5 text-primary" />
+                </span>
+                <p className="mt-3 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{d}</p>
               </li>
             ))}
@@ -127,7 +131,7 @@ export function Parts() {
             to="/contact"
             className="mt-8 inline-block rounded-full bg-brand-ink px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-opacity hover:opacity-90"
           >
-            Request a part
+            Request a service
           </Link>
         </div>
       </div>
@@ -137,9 +141,9 @@ export function Parts() {
 
 export function WhyUs() {
   const items = [
-    { icon: ShieldCheck, t: "Paper check", d: "We encourage buyers to review vehicle documents before payment." },
+    { icon: Car, t: "Honda & Acura focus", d: "We specialize in Honda and Acura vehicles and their parts." },
     { icon: BadgeCheck, t: "Straight pricing", d: "We agree on one clear price with no surprise charges." },
-    { icon: Wrench, t: "Parts support", d: "Need a part after purchase? Send us a request and we will help source it." },
+    { icon: Wrench, t: "Install & repair", d: "We do the work — not just supply the parts." },
     { icon: Truck, t: "Local handover", d: "Pick up your purchase in Lagos, or arrange your own transport." },
   ];
   return (
@@ -148,13 +152,13 @@ export function WhyUs() {
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ icon: Icon, t, d }, i) => (
           <Reveal key={t} delay={i * 80}>
-          <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-              <Icon className="h-6 w-6 text-primary" />
-            </span>
-            <h3 className="mt-4 font-display text-xl uppercase tracking-wide text-card-foreground">{t}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{d}</p>
-          </div>
+            <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
+                <Icon className="h-6 w-6 text-primary" />
+              </span>
+              <h3 className="mt-4 font-display text-xl uppercase tracking-wide text-card-foreground">{t}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+            </div>
           </Reveal>
         ))}
       </div>
@@ -176,15 +180,15 @@ export function AboutStory() {
         <div>
           <SectionHead
             eyebrow="About us"
-            title="Your partner for cars & auto parts"
-            copy="SEO Autos Investment Limited helps buyers in Lagos find quality vehicles and auto parts without the usual back-and-forth."
+            title="Your Honda & Acura partner"
+            copy="SEO Autos Investment Limited helps buyers and owners in Lagos get the right Honda and Acura vehicles, engines, gearboxes and accessories."
             align="left"
           />
           <p className="mt-6 text-muted-foreground">
             We keep things simple: tell us what you need, we check what is available, and we agree on a fair price. No hidden fees, no stories.
           </p>
           <p className="mt-4 text-muted-foreground">
-            Whether you are buying one car, replacing a part, or sourcing for a fleet, our team will guide you from enquiry to handover.
+            Whether you are buying a vehicle, swapping an engine, replacing a gearbox, fitting accessories or booking a repair, our team will guide you through the process.
           </p>
           <Link
             to="/contact"
@@ -196,13 +200,13 @@ export function AboutStory() {
         <div className="grid gap-4 sm:grid-cols-2">
           {values.map(({ icon: Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 80}>
-            <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                <Icon className="h-6 w-6 text-primary" />
-              </span>
-              <h3 className="mt-4 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{d}</p>
-            </div>
+              <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
+                  <Icon className="h-6 w-6 text-primary" />
+                </span>
+                <h3 className="mt-4 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+              </div>
             </Reveal>
           ))}
         </div>
@@ -220,12 +224,11 @@ export function ContactSection() {
             Ready to buy? <span className="text-secondary">Let's talk.</span>
           </h2>
           <p className="mt-4 max-w-md text-primary-foreground/75">
-            Tell us the car or part you need and your budget. We will get back to you as soon as possible.
+            Tell us the Honda or Acura service you need and your budget. We will get back to you as soon as possible.
           </p>
           <ul className="mt-8 space-y-4 text-sm text-primary-foreground/85">
             <li className="flex items-center gap-3"><Phone className="h-5 w-5 shrink-0 text-secondary" /> <a href="tel:+2348138946058">+234 813 894 6058</a></li>
             <li className="flex items-center gap-3"><Mail className="h-5 w-5 shrink-0 text-secondary" /> <a href="mailto:blessedsolo6614@gmail.com" className="break-all">blessedsolo6614@gmail.com</a></li>
-
             <li className="flex items-center gap-3"><MapPin className="h-5 w-5 shrink-0 text-secondary" /> Lagos, Nigeria</li>
           </ul>
         </div>
@@ -240,7 +243,6 @@ export function ContactSection() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Gmail" placeholder="yourname@gmail.com" type="email" />
             <Field label="Budget" placeholder="₦20,000,000" />
-
           </div>
           <label className="mt-4 block">
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -248,7 +250,7 @@ export function ContactSection() {
             </span>
             <textarea
               rows={4}
-              placeholder="e.g. 2020 Toyota Camry, or front brake pads for Lexus RX 350"
+              placeholder="e.g. Honda Accord 2010 engine swap, or Acura MDX gearbox"
               className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
             />
           </label>
