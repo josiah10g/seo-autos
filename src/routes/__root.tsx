@@ -84,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "SEO Autos Investment Limited" },
       {
         name: "description",
-        content: "Quality cars and genuine auto parts from SEO Autos Investment Limited.",
+        content: "Honda and Acura vehicle sales, engine and gearbox swaps, accessories and car repairs from SEO Autos Investment Limited.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
