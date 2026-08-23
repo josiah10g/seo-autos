@@ -64,7 +64,7 @@ export function Inventory() {
         copy="We sell and buy Honda and Acura vehicles. Stock changes often, so call or send an enquiry to see what is available right now."
       />
       <Reveal>
-        <div className="mt-10 rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-card">
+        <div className="mt-10 rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/10">
           <p className="text-muted-foreground">
             Current Honda and Acura listings will be posted here. For now, reach us directly and we will share what we have in stock.
           </p>
@@ -118,8 +118,8 @@ export function Parts() {
           />
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
             {items.map(({ icon: Icon, t, d }) => (
-              <li key={t} className="rounded-lg border border-border bg-card p-4">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+              <li key={t} className="rounded-lg border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/20 hover:shadow-card">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary transition-colors hover:bg-primary">
                   <Icon className="h-5 w-5 text-primary" />
                 </span>
                 <p className="mt-3 font-display text-lg uppercase tracking-wide text-card-foreground">{t}</p>
@@ -152,7 +152,7 @@ export function WhyUs() {
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {items.map(({ icon: Icon, t, d }, i) => (
           <Reveal key={t} delay={i * 80}>
-            <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
+            <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:bg-secondary/15 hover:shadow-brand">
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
                 <Icon className="h-6 w-6 text-primary" />
               </span>
@@ -200,7 +200,7 @@ export function AboutStory() {
         <div className="grid gap-4 sm:grid-cols-2">
           {values.map(({ icon: Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 80}>
-              <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card">
+              <div className="h-full rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:bg-secondary/15 hover:shadow-brand">
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
                   <Icon className="h-6 w-6 text-primary" />
                 </span>
