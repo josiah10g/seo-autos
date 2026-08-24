@@ -14,10 +14,12 @@ import {
   RefreshCcw,
   CircleDollarSign,
   Car,
+  MessageCircle,
 } from "lucide-react";
 import heroCar from "@/assets/hero-car.jpg";
 import parts from "@/assets/parts.jpg";
 import { Link } from "@tanstack/react-router";
+import { WhatsAppLink } from "./WhatsAppButton";
 import { Reveal } from "@/components/site/Reveal";
 
 export function Hero() {
