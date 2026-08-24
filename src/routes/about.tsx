@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AboutStory, WhyUs } from "@/components/site/Sections";
+import { Showcase } from "@/components/site/Showcase";
 
 const title = "About Us | SEO Autos Investment Limited";
 const description =
