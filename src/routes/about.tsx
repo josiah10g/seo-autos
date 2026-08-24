@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AboutStory, WhyUs } from "@/components/site/Sections";
+import { Showcase } from "@/components/site/Showcase";
 
 const title = "About Us | SEO Autos Investment Limited";
 const description =
@@ -25,6 +26,7 @@ function AboutPage() {
         title="Who we are"
         copy="A Honda and Acura specialist in Lagos focused on straight dealing, fair prices and reliable work."
       />
+      <Showcase />
       <AboutStory />
       <WhyUs />
     </>
