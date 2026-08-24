@@ -230,6 +230,7 @@ export function ContactSection() {
           </p>
           <ul className="mt-8 space-y-4 text-sm text-primary-foreground/85">
             <li className="flex items-center gap-3"><Phone className="h-5 w-5 shrink-0 text-secondary" /> <a href="tel:+2348138946058">+234 813 894 6058</a></li>
+            <li className="flex items-center gap-3"><MessageCircle className="h-5 w-5 shrink-0 text-secondary" /> <WhatsAppLink className="hover:text-secondary">Chat on WhatsApp</WhatsAppLink></li>
             <li className="flex items-center gap-3"><Mail className="h-5 w-5 shrink-0 text-secondary" /> <a href="mailto:blessedsolo6614@gmail.com" className="break-all">blessedsolo6614@gmail.com</a></li>
             <li className="flex items-center gap-3"><MapPin className="h-5 w-5 shrink-0 text-secondary" /> Lagos, Nigeria</li>
           </ul>
