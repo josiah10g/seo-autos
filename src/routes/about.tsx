@@ -26,6 +26,7 @@ function AboutPage() {
         title="Who we are"
         copy="A Honda and Acura specialist in Lagos focused on straight dealing, fair prices and reliable work."
       />
+      <Showcase />
       <AboutStory />
       <WhyUs />
     </>
