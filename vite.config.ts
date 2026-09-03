@@ -5,7 +5,14 @@ import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
+const isVercel = process.env["VERCEL"] === "1" || process.env["VERCEL"] === "true";
 const isNetlify = process.env["NETLIFY"] === "true" || process.env["NETLIFY"] === "1";
+
+function getPreset() {
+  if (isVercel) return "vercel";
+  if (isNetlify) return "netlify";
+  return "cloudflare-module";
+}
 
 export default defineConfig({
   resolve: {
@@ -28,7 +35,7 @@ export default defineConfig({
       server: { entry: "server" },
     }),
     nitro({
-      ...(isNetlify ? { preset: "netlify" } : { preset: "cloudflare-module" }),
+      preset: getPreset(),
     }),
     viteReact(),
   ],
