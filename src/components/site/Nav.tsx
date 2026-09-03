@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/logo.png.asset.json";
+import { LOGO_DATA_URI } from "@/assets/logoData";
+import { AuthModals } from "./AuthModals";
 
 const links = [
   { label: "Home", to: "/" },
@@ -15,10 +16,10 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur">
-      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
-            src={logo.url}
+            src={LOGO_DATA_URI}
             alt="SEO Autos Investment Limited logo"
             width={48}
             height={48}
@@ -34,19 +35,25 @@ export function Nav() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              activeProps={{ className: "text-primary" }}
-              className="text-sm font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Right side aligned on the exact same line: Links followed by Auth buttons */}
+        <div className="hidden items-center gap-8 lg:flex">
+          <nav className="flex items-center gap-7">
+            {links.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                activeProps={{ className: "text-primary font-bold" }}
+                className="text-sm font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
 
+          <div className="h-4 w-px bg-border" />
+
+          <AuthModals />
+        </div>
 
         <button
           type="button"
@@ -72,8 +79,10 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
+          <div className="pt-4 flex items-center justify-start">
+            <AuthModals />
+          </div>
         </nav>
-
       )}
     </header>
   );

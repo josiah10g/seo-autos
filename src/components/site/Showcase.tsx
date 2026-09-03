@@ -1,5 +1,5 @@
 import { Reveal } from "./Reveal";
-import collage from "@/assets/seo-autos-collage.jpeg.asset.json";
+import collage from "@/assets/seo-autos-collage.jpg";
 
 export function Showcase() {
   return (
@@ -7,7 +7,7 @@ export function Showcase() {
       <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
         <Reveal>
           <img
-            src={collage.url}
+            src={collage}
             alt="SEO Autos collage of Honda engines and vehicles"
             loading="lazy"
             width={1200}
