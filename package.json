@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node -e \"const fs=require('fs'); fs.cpSync('.output/public', 'dist', {recursive: true, force: true});\"",
+    "build": "vite build && node -e \"const fs=require('fs'); const src='.output/public'; if(fs.existsSync(src)){fs.cpSync(src,'dist',{recursive:true,force:true});console.log('Copied .output/public -> dist');}else{console.log('No .output/public found (Vercel preset), skipping copy.');};\"",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

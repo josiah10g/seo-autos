@@ -24,5 +24,5 @@ export function Footer() {
 
       </div>
     </footer>
-  );5
+  );
 }
