@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Hero, WhyUs } from "@/components/site/Sections";
+import { VehicleShowcase } from "@/components/site/VehicleShowcase";
 
 const title = "SEO Autos Investment Limited | Honda & Acura Specialists";
 const description =
@@ -21,6 +22,7 @@ function Index() {
   return (
     <>
       <Hero />
+      <VehicleShowcase />
       <WhyUs />
     </>
   );
