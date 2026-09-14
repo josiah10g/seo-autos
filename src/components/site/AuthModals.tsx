@@ -1,5 +1,6 @@
-import { useState, useId } from "react";
-import { Lock, Mail, User, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect, useId } from "react";
+import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +9,24 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+
+export interface SessionUser {
+  email: string;
+  fullName: string;
+  role: "admin" | "customer";
+}
+
+const LOCAL_SESSION_KEY = "seo_autos_active_user";
 
 export function AuthModals() {
   const [openModal, setOpenModal] = useState<"login" | "signup" | null>(null);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "info" | "error" | "success";
     text: string;
@@ -24,7 +36,56 @@ export function AuthModals() {
   const passwordId = useId();
   const nameId = useId();
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check local session or Supabase session
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const role = session.user.user_metadata?.role === "admin" ? "admin" : "customer";
+          const userObj: SessionUser = {
+            email: session.user.email || "",
+            fullName: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User",
+            role,
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+        }
+      });
+
+      const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+          const role = session.user.user_metadata?.role === "admin" ? "admin" : "customer";
+          const userObj: SessionUser = {
+            email: session.user.email || "",
+            fullName: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User",
+            role,
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem(LOCAL_SESSION_KEY);
+        }
+      });
+
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    }
+  }, []);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMessage(null);
 
@@ -36,13 +97,50 @@ export function AuthModals() {
       return;
     }
 
-    setStatusMessage({
-      type: "info",
-      text: "Admin Dashboard authentication check will be connected once you're ready for admin setup.",
-    });
+    setIsLoading(true);
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+
+        const role = data.user.user_metadata?.role === "admin" ? "admin" : "customer";
+        const sessionUser: SessionUser = {
+          email: data.user.email || email,
+          fullName: data.user.user_metadata?.full_name || email.split("@")[0],
+          role,
+        };
+        setCurrentUser(sessionUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
+        closeModal();
+        return;
+      } catch (err: any) {
+        setStatusMessage({
+          type: "error",
+          text: err.message || "Failed to sign in. Please verify credentials.",
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // Demo local mock login
+    const isAdmin = email.toLowerCase().includes("admin");
+    const demoUser: SessionUser = {
+      email,
+      fullName: fullName || email.split("@")[0],
+      role: isAdmin ? "admin" : "customer",
+    };
+    setCurrentUser(demoUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
+    setIsLoading(false);
+    closeModal();
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMessage(null);
 
@@ -54,16 +152,90 @@ export function AuthModals() {
       return;
     }
 
-    setStatusMessage({
-      type: "info",
-      text: "Customer account registration will be enabled once database integration is connected.",
-    });
+    setIsLoading(true);
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+            },
+          },
+        });
+        if (error) throw error;
+
+        if (data.session?.user) {
+          const userObj: SessionUser = {
+            email: data.session.user.email || email,
+            fullName,
+            role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+          closeModal();
+        } else {
+          setStatusMessage({
+            type: "success",
+            text: "Account registered! Please check your email to confirm your account.",
+          });
+        }
+        setIsLoading(false);
+        return;
+      } catch (err: any) {
+        setStatusMessage({
+          type: "error",
+          text: err.message || "Failed to register account.",
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // Demo local mock signup
+    const demoUser: SessionUser = {
+      email,
+      fullName,
+      role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+    };
+    setCurrentUser(demoUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
+    setIsLoading(false);
+    closeModal();
   };
 
-  const handleGoogleAuth = (mode: "login" | "signup") => {
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setCurrentUser(null);
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+  };
+
+  const handleGoogleAuth = async (mode: "login" | "signup") => {
+    if (supabase) {
+      try {
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        return;
+      } catch (err: any) {
+        setStatusMessage({
+          type: "error",
+          text: err.message || "Google OAuth failed.",
+        });
+        return;
+      }
+    }
     setStatusMessage({
       type: "info",
-      text: `Sign in with Google (${mode === "login" ? "Login" : "Sign Up"}) is ready to link to your Google OAuth client ID.`,
+      text: `Sign in with Google (${mode === "login" ? "Login" : "Sign Up"}) requires VITE_SUPABASE_URL configuration in .env.`,
     });
   };
 
@@ -73,32 +245,65 @@ export function AuthModals() {
     setEmail("");
     setPassword("");
     setFullName("");
+    setIsLoading(false);
   };
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setStatusMessage(null);
-            setOpenModal("login");
-          }}
-          className="rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer"
-        >
-          Login
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setStatusMessage(null);
-            setOpenModal("signup");
-          }}
-          className="rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-sm transition-transform hover:scale-105 hover:bg-primary/90 cursor-pointer"
-        >
-          Sign Up
-        </button>
-      </div>
+      {currentUser ? (
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <span className="block text-xs font-bold text-foreground leading-none">
+              {currentUser.fullName}
+            </span>
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {currentUser.role === "admin" ? "Yard Admin" : "Customer"}
+            </span>
+          </div>
+
+          {currentUser.role === "admin" && (
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Dashboard
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            title="Sign Out"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusMessage(null);
+              setOpenModal("login");
+            }}
+            className="rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusMessage(null);
+              setOpenModal("signup");
+            }}
+            className="rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-sm transition-transform hover:scale-105 hover:bg-primary/90 cursor-pointer"
+          >
+            Sign Up
+          </button>
+        </div>
+      )}
 
       {/* Login Dialog */}
       <Dialog open={openModal === "login"} onOpenChange={(open) => !open && closeModal()}>
@@ -111,7 +316,9 @@ export function AuthModals() {
               Sign In to SEO Autos
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Sign in with Google or your credentials to access your account.
+              {isSupabaseConfigured
+                ? "Sign in with your email or admin credentials."
+                : "Demo Mode: Enter any email. Use an email with 'admin' (e.g. admin@seoautos.com) to test the Admin Dashboard."}
             </DialogDescription>
           </DialogHeader>
 
@@ -120,6 +327,8 @@ export function AuthModals() {
               className={`rounded-lg p-3 text-xs leading-relaxed flex items-start gap-2 ${
                 statusMessage.type === "error"
                   ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : statusMessage.type === "success"
+                  ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                   : "bg-secondary/20 text-secondary-foreground border border-secondary/40"
               }`}
             >
@@ -156,6 +365,7 @@ export function AuthModals() {
                 <input
                   id={emailId}
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@seoautos.com"
@@ -173,6 +383,7 @@ export function AuthModals() {
                 <input
                   id={passwordId}
                   type={showPassword ? "text" : "password"}
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -189,8 +400,12 @@ export function AuthModals() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2">
-              Sign In
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="text-center text-xs text-muted-foreground pt-1">
@@ -230,6 +445,8 @@ export function AuthModals() {
               className={`rounded-lg p-3 text-xs leading-relaxed flex items-start gap-2 ${
                 statusMessage.type === "error"
                   ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : statusMessage.type === "success"
+                  ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
                   : "bg-secondary/20 text-secondary-foreground border border-secondary/40"
               }`}
             >
@@ -266,9 +483,10 @@ export function AuthModals() {
                 <input
                   id={nameId}
                   type="text"
+                  required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. John Doe"
+                  placeholder="e.g. Babatunde Adeyemi"
                   className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -283,6 +501,7 @@ export function AuthModals() {
                 <input
                   id={emailId + "-signup"}
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
@@ -300,6 +519,7 @@ export function AuthModals() {
                 <input
                   id={passwordId + "-signup"}
                   type={showPassword ? "text" : "password"}
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -316,8 +536,12 @@ export function AuthModals() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2">
-              Register Account
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer"
+            >
+              {isLoading ? "Creating account..." : "Register Account"}
             </Button>
 
             <div className="text-center text-xs text-muted-foreground pt-1">
