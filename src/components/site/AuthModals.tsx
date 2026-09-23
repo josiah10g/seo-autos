@@ -1,5 +1,5 @@
 import { useState, useEffect, useId } from "react";
-import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck } from "lucide-react";
+import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck, Phone } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   Dialog,
@@ -24,8 +24,11 @@ export function AuthModals() {
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: "info" | "error" | "success";
@@ -34,6 +37,8 @@ export function AuthModals() {
 
   const emailId = useId();
   const passwordId = useId();
+  const confirmPasswordId = useId();
+  const phoneId = useId();
   const nameId = useId();
 
   useEffect(() => {
@@ -144,10 +149,26 @@ export function AuthModals() {
     e.preventDefault();
     setStatusMessage(null);
 
-    if (!fullName || !email || !password) {
+    if (!fullName || !email || !phone || !password || !confirmPassword) {
       setStatusMessage({
         type: "error",
-        text: "Please fill out all fields to register.",
+        text: "Please fill out all fields including your phone number.",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      setStatusMessage({
+        type: "error",
+        text: "Password must be at least 6 characters long.",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setStatusMessage({
+        type: "error",
+        text: "Passwords do not match. Please retype carefully.",
       });
       return;
     }
@@ -162,6 +183,7 @@ export function AuthModals() {
           options: {
             data: {
               full_name: fullName,
+              phone: phone,
               role: email.toLowerCase().includes("admin") ? "admin" : "customer",
             },
           },
@@ -215,35 +237,13 @@ export function AuthModals() {
     localStorage.removeItem(LOCAL_SESSION_KEY);
   };
 
-  const handleGoogleAuth = async (mode: "login" | "signup") => {
-    if (supabase) {
-      try {
-        await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: window.location.origin,
-          },
-        });
-        return;
-      } catch (err: any) {
-        setStatusMessage({
-          type: "error",
-          text: err.message || "Google OAuth failed.",
-        });
-        return;
-      }
-    }
-    setStatusMessage({
-      type: "info",
-      text: `Sign in with Google (${mode === "login" ? "Login" : "Sign Up"}) requires VITE_SUPABASE_URL configuration in .env.`,
-    });
-  };
-
   const closeModal = () => {
     setOpenModal(null);
     setStatusMessage(null);
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
+    setPhone("");
     setFullName("");
     setIsLoading(false);
   };
@@ -337,26 +337,7 @@ export function AuthModals() {
             </div>
           )}
 
-          {/* Sign In with Google Button */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => handleGoogleAuth("login")}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-muted cursor-pointer"
-            >
-              <GoogleIcon />
-              <span>Sign in with Google</span>
-            </button>
-          </div>
-
-          <div className="relative my-2 flex items-center justify-center">
-            <div className="w-full border-t border-border" />
-            <span className="absolute bg-background px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              or continue with email
-            </span>
-          </div>
-
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <form onSubmit={handleLoginSubmit} className="space-y-4 pt-1">
             <div>
               <label htmlFor={emailId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Email address
@@ -436,7 +417,7 @@ export function AuthModals() {
               Create an Account
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Sign up with Google or complete the form to get vehicle updates and priority booking.
+              Register your details to schedule vehicle inspections and receive personalized inventory updates.
             </DialogDescription>
           </DialogHeader>
 
@@ -455,31 +436,12 @@ export function AuthModals() {
             </div>
           )}
 
-          {/* Sign Up with Google Button */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => handleGoogleAuth("signup")}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-muted cursor-pointer"
-            >
-              <GoogleIcon />
-              <span>Sign up with Google</span>
-            </button>
-          </div>
-
-          <div className="relative my-2 flex items-center justify-center">
-            <div className="w-full border-t border-border" />
-            <span className="absolute bg-background px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              or register with email
-            </span>
-          </div>
-
-          <form onSubmit={handleSignupSubmit} className="space-y-4">
+          <form onSubmit={handleSignupSubmit} className="space-y-3.5 pt-1">
             <div>
               <label htmlFor={nameId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Full Name
               </label>
-              <div className="relative mt-1.5">
+              <div className="relative mt-1">
                 <input
                   id={nameId}
                   type="text"
@@ -487,9 +449,27 @@ export function AuthModals() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Babatunde Adeyemi"
-                  className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor={phoneId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Phone Number
+              </label>
+              <div className="relative mt-1">
+                <input
+                  id={phoneId}
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+234 803 123 4567"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
 
@@ -497,7 +477,7 @@ export function AuthModals() {
               <label htmlFor={emailId + "-signup"} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Email address
               </label>
-              <div className="relative mt-1.5">
+              <div className="relative mt-1">
                 <input
                   id={emailId + "-signup"}
                   type="email"
@@ -505,35 +485,69 @@ export function AuthModals() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
 
             <div>
               <label htmlFor={passwordId + "-signup"} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Create Password
+                Password
               </label>
-              <div className="relative mt-1.5">
+              <div className="relative mt-1">
                 <input
                   id={passwordId + "-signup"}
                   type={showPassword ? "text" : "password"}
                   required
+                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-10 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  placeholder="At least 6 characters"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-10 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor={confirmPasswordId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Confirm Password
+              </label>
+              <div className="relative mt-1">
+                <input
+                  id={confirmPasswordId}
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  className={`w-full rounded-lg border bg-background py-2 pl-9 pr-10 text-sm text-foreground outline-none focus:ring-1 ${
+                    confirmPassword && password !== confirmPassword
+                      ? "border-destructive focus:border-destructive focus:ring-destructive"
+                      : "border-input focus:border-primary focus:ring-primary"
+                  }`}
+                />
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className="mt-1 text-[11px] text-destructive">Passwords do not match.</p>
+              )}
             </div>
 
             <Button
@@ -561,28 +575,5 @@ export function AuthModals() {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.43 7.35 24 12 24Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.28 14.27a7.17 7.17 0 0 1 0-4.54V6.58H1.26a11.996 11.996 0 0 0 0 10.84l4.02-3.15Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.29 2.57 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"
-      />
-    </svg>
   );
 }

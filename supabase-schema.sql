@@ -129,14 +129,17 @@ CREATE POLICY "Admins can update bookings"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, role)
+  INSERT INTO public.profiles (id, email, full_name, phone, role)
   VALUES (
     new.id,
     new.email,
     COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'phone',
     COALESCE(new.raw_user_meta_data->>'role', 'customer')
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name,
+    phone = COALESCE(EXCLUDED.phone, public.profiles.phone);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
