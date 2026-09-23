@@ -6,6 +6,7 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 const isNetlify = process.env["NETLIFY"] === "true" || process.env["NETLIFY"] === "1";
+const isVercel = process.env["VERCEL"] === "1" || Boolean(process.env["VERCEL"]);
 
 export default defineConfig({
   resolve: {
@@ -28,7 +29,7 @@ export default defineConfig({
       server: { entry: "server" },
     }),
     nitro({
-      ...(isNetlify ? { preset: "netlify" } : { preset: "cloudflare-module" }),
+      preset: isVercel ? "vercel" : isNetlify ? "netlify" : "cloudflare-module",
     }),
     viteReact(),
   ],
