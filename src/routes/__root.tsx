@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { WhatsAppButton } from "@/components/site/WhatsAppButton";
+import { Toaster } from "@/components/ui/sonner";
 
 
 function NotFoundComponent() {
@@ -132,6 +133,7 @@ function RootComponent() {
         </main>
         <Footer />
         <WhatsAppButton />
+        <Toaster richColors position="top-right" closeButton />
       </div>
     </QueryClientProvider>
   );

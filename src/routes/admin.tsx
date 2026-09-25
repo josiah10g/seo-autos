@@ -31,6 +31,7 @@ import {
   type BookingRecord,
   isSupabaseConfigured,
 } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -178,21 +179,45 @@ function AdminPage() {
       isAvailable: true,
     };
 
-    await db.saveVehicle(vehicleToSave);
-    setIsSaving(false);
-    setVehicleModalOpen(false);
-    loadData();
+    try {
+      const res = await db.saveVehicle(vehicleToSave);
+      if (res.success) {
+        toast.success(editingVehicle ? "Vehicle updated successfully!" : "Vehicle added to inventory!");
+      } else {
+        toast.error("Failed to save vehicle. Check connection.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save vehicle.");
+    } finally {
+      setIsSaving(false);
+      setVehicleModalOpen(false);
+      loadData();
+    }
   };
 
   const handleDeleteVehicle = async (id: string) => {
     if (confirm("Are you sure you want to remove this vehicle from inventory?")) {
-      await db.deleteVehicle(id);
+      try {
+        const res = await db.deleteVehicle(id);
+        if (res.success) {
+          toast.success("Vehicle removed from inventory.");
+        } else {
+          toast.error("Failed to delete vehicle.");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Error deleting vehicle.");
+      }
       loadData();
     }
   };
 
   const handleBookingStatusChange = async (id: string, status: BookingRecord["status"]) => {
-    await db.updateBookingStatus(id, status);
+    try {
+      await db.updateBookingStatus(id, status);
+      toast.success(`Booking status updated to ${status}`);
+    } catch (err: any) {
+      toast.error("Failed to update status.");
+    }
     loadData();
   };
 

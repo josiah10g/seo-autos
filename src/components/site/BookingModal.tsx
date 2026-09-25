@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { db, type VehicleListing } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface BookingModalProps {
   vehicle: VehicleListing | null;
@@ -44,6 +45,22 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
   const timeId = useId();
   const notesId = useId();
 
+  // Auto-fill logged-in customer details
+  useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("seo_autos_active_user");
+      if (stored) {
+        try {
+          const user = JSON.parse(stored);
+          if (user.fullName && !fullName) setFullName(user.fullName);
+          if (user.email && !email) setEmail(user.email);
+        } catch {
+          // ignore
+        }
+      }
+    }
+  });
+
   if (!vehicle) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +69,7 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
 
     if (!fullName || !phone || !date) {
       setErrorMsg("Please provide your full name, phone number, and inspection date.");
+      toast.error("Please provide your full name, phone number, and date.");
       return;
     }
 
@@ -71,11 +89,14 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
 
       if (res.success) {
         setIsSuccess(true);
+        toast.success("Inspection booking received successfully!");
       } else {
         setErrorMsg("Could not record booking. Please try again or reach out on WhatsApp.");
+        toast.error("Could not record booking. Please try again.");
       }
     } catch (err: any) {
       setErrorMsg(err.message || "An unexpected error occurred.");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setIsSubmitting(false);
     }

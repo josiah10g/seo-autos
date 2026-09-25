@@ -291,6 +291,30 @@ export const db = {
     return getLocalBookings();
   },
 
+  async getCustomerBookings(email?: string, phone?: string): Promise<BookingRecord[]> {
+    if (supabase && (email || phone)) {
+      try {
+        let query = supabase.from("bookings").select("*").order("created_at", { ascending: false });
+        if (email) {
+          query = query.eq("customer_email", email);
+        } else if (phone) {
+          query = query.eq("customer_phone", phone);
+        }
+        const { data, error } = await query;
+        if (!error && data) return data;
+      } catch (err) {
+        console.warn("Supabase fetch customer bookings error:", err);
+      }
+    }
+    const all = getLocalBookings();
+    if (!email && !phone) return all;
+    return all.filter(
+      (b) =>
+        (email && b.customer_email?.toLowerCase() === email.toLowerCase()) ||
+        (phone && b.customer_phone === phone)
+    );
+  },
+
   async createBooking(booking: Omit<BookingRecord, "id" | "created_at">): Promise<{ success: boolean; id?: string }> {
     const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `bkg_${Date.now()}`;
     const newRecord: BookingRecord = {

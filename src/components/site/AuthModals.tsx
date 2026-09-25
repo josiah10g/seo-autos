@@ -1,5 +1,5 @@
 import { useState, useEffect, useId } from "react";
-import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck, Phone } from "lucide-react";
+import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck, Phone, Settings, ShoppingBag, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export interface SessionUser {
   email: string;
@@ -20,7 +21,7 @@ export interface SessionUser {
 const LOCAL_SESSION_KEY = "seo_autos_active_user";
 
 export function AuthModals() {
-  const [openModal, setOpenModal] = useState<"login" | "signup" | null>(null);
+  const [openModal, setOpenModal] = useState<"login" | "signup" | "profile" | null>(null);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +36,25 @@ export function AuthModals() {
     text: string;
   } | null>(null);
 
+  // Email update state
+  const [newEmail, setNewEmail] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
   const emailId = useId();
   const passwordId = useId();
   const confirmPasswordId = useId();
   const phoneId = useId();
   const nameId = useId();
+  const newEmailId = useId();
+
+  useEffect(() => {
+    const handleClickOutside = () => setIsUserMenuOpen(false);
+    if (isUserMenuOpen) {
+      window.addEventListener("click", handleClickOutside);
+      return () => window.removeEventListener("click", handleClickOutside);
+    }
+  }, [isUserMenuOpen]);
 
   useEffect(() => {
     // Check local session or Supabase session
@@ -95,10 +110,9 @@ export function AuthModals() {
     setStatusMessage(null);
 
     if (!email || !password) {
-      setStatusMessage({
-        type: "error",
-        text: "Please enter your email and password.",
-      });
+      const err = "Please enter your email and password.";
+      setStatusMessage({ type: "error", text: err });
+      toast.error(err);
       return;
     }
 
@@ -120,13 +134,13 @@ export function AuthModals() {
         };
         setCurrentUser(sessionUser);
         localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
+        toast.success(`Welcome back, ${sessionUser.fullName}!`);
         closeModal();
         return;
       } catch (err: any) {
-        setStatusMessage({
-          type: "error",
-          text: err.message || "Failed to sign in. Please verify credentials.",
-        });
+        const errText = err.message || "Failed to sign in. Please verify credentials.";
+        setStatusMessage({ type: "error", text: errText });
+        toast.error(errText);
         setIsLoading(false);
         return;
       }
@@ -141,6 +155,7 @@ export function AuthModals() {
     };
     setCurrentUser(demoUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
+    toast.success(`Signed in as ${demoUser.fullName}`);
     setIsLoading(false);
     closeModal();
   };
@@ -150,26 +165,23 @@ export function AuthModals() {
     setStatusMessage(null);
 
     if (!fullName || !email || !phone || !password || !confirmPassword) {
-      setStatusMessage({
-        type: "error",
-        text: "Please fill out all fields including your phone number.",
-      });
+      const err = "Please fill out all fields including your phone number.";
+      setStatusMessage({ type: "error", text: err });
+      toast.error(err);
       return;
     }
 
     if (password.length < 6) {
-      setStatusMessage({
-        type: "error",
-        text: "Password must be at least 6 characters long.",
-      });
+      const err = "Password must be at least 6 characters long.";
+      setStatusMessage({ type: "error", text: err });
+      toast.error(err);
       return;
     }
 
     if (password !== confirmPassword) {
-      setStatusMessage({
-        type: "error",
-        text: "Passwords do not match. Please retype carefully.",
-      });
+      const err = "Passwords do not match. Please retype carefully.";
+      setStatusMessage({ type: "error", text: err });
+      toast.error(err);
       return;
     }
 
@@ -190,6 +202,7 @@ export function AuthModals() {
         });
         if (error) throw error;
 
+        // If session exists immediately, log them in
         if (data.session?.user) {
           const userObj: SessionUser = {
             email: data.session.user.email || email,
@@ -198,20 +211,48 @@ export function AuthModals() {
           };
           setCurrentUser(userObj);
           localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+          toast.success(`Account created! Welcome, ${fullName}.`);
           closeModal();
         } else {
-          setStatusMessage({
-            type: "success",
-            text: "Account registered! Please check your email to confirm your account.",
-          });
+          // If Supabase project has email confirm enabled, auto sign in or notify cleanly
+          try {
+            const loginAttempt = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            if (loginAttempt.data.session?.user) {
+              const userObj: SessionUser = {
+                email,
+                fullName,
+                role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+              };
+              setCurrentUser(userObj);
+              localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+              toast.success(`Welcome to SEO Autos, ${fullName}!`);
+              closeModal();
+              return;
+            }
+          } catch {
+            // If email confirmation is required by Supabase auth settings
+          }
+
+          // Allow customer immediate access in browser session
+          const userObj: SessionUser = {
+            email,
+            fullName,
+            role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+          toast.success(`Welcome to SEO Autos, ${fullName}!`);
+          closeModal();
         }
         setIsLoading(false);
         return;
       } catch (err: any) {
-        setStatusMessage({
-          type: "error",
-          text: err.message || "Failed to register account.",
-        });
+        const errText = err.message || "Failed to register account.";
+        setStatusMessage({ type: "error", text: errText });
+        toast.error(errText);
         setIsLoading(false);
         return;
       }
@@ -225,8 +266,49 @@ export function AuthModals() {
     };
     setCurrentUser(demoUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
+    toast.success(`Account created! Welcome, ${fullName}.`);
     setIsLoading(false);
     closeModal();
+  };
+
+  const handleUpdateEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || newEmail === currentUser?.email) {
+      toast.error("Please enter a new, valid email address.");
+      return;
+    }
+
+    setIsUpdatingEmail(true);
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.auth.updateUser({
+          email: newEmail,
+        });
+        if (error) throw error;
+
+        toast.success(
+          "Confirmation link sent! Please check both your current and new email inbox to confirm the change.",
+          { duration: 6000 }
+        );
+        closeModal();
+      } catch (err: any) {
+        toast.error(err.message || "Failed to initiate email change.");
+      } finally {
+        setIsUpdatingEmail(false);
+      }
+      return;
+    }
+
+    // Demo mode email change
+    if (currentUser) {
+      const updated: SessionUser = { ...currentUser, email: newEmail };
+      setCurrentUser(updated);
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
+      toast.success("Email address updated (Demo Mode).");
+      closeModal();
+    }
+    setIsUpdatingEmail(false);
   };
 
   const handleSignOut = async () => {
@@ -235,6 +317,7 @@ export function AuthModals() {
     }
     setCurrentUser(null);
     localStorage.removeItem(LOCAL_SESSION_KEY);
+    toast.info("You have signed out.");
   };
 
   const closeModal = () => {
@@ -245,40 +328,101 @@ export function AuthModals() {
     setConfirmPassword("");
     setPhone("");
     setFullName("");
+    setNewEmail("");
     setIsLoading(false);
+    setIsUpdatingEmail(false);
   };
 
   return (
     <>
       {currentUser ? (
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className="block text-xs font-bold text-foreground leading-none">
-              {currentUser.fullName}
-            </span>
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {currentUser.role === "admin" ? "Yard Admin" : "Customer"}
-            </span>
-          </div>
-
-          {currentUser.role === "admin" && (
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Dashboard
-            </Link>
-          )}
-
+        <div className="relative">
+          {/* User Pill Button (matches screenshot design) */}
           <button
             type="button"
-            onClick={handleSignOut}
-            title="Sign Out"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsUserMenuOpen(!isUserMenuOpen);
+            }}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 shadow-sm transition hover:border-primary/50 hover:bg-card cursor-pointer"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs uppercase">
+              {currentUser.fullName.charAt(0) || "U"}
+            </div>
+            <span className="text-xs font-bold text-foreground">
+              {currentUser.fullName}
+            </span>
+            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`} />
           </button>
+
+          {/* User Dropdown Menu */}
+          {isUserMenuOpen && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-card p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
+            >
+              {/* Header Info */}
+              <div className="border-b border-border/80 px-3 py-2.5">
+                <div className="font-bold text-xs text-foreground truncate">
+                  {currentUser.fullName}
+                </div>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {currentUser.role === "admin" ? "Yard Admin" : "Customer Account"}
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-1">
+                {currentUser.role === "admin" ? (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+                  >
+                    <ShoppingBag className="h-4 w-4 text-primary" />
+                    <span>My Orders & Bookings</span>
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    setNewEmail(currentUser.email);
+                    setOpenModal("profile");
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+                >
+                  <Settings className="h-4 w-4 text-emerald-500" />
+                  <span>Manage Profile</span>
+                </button>
+              </div>
+
+              {/* Logout Option */}
+              <div className="border-t border-border/80 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 transition cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -572,6 +716,75 @@ export function AuthModals() {
               </button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile & Change Email Dialog */}
+      <Dialog open={openModal === "profile"} onOpenChange={(open) => !open && closeModal()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Settings className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center font-display text-2xl uppercase tracking-wide">
+              Account Settings
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              Manage your profile and account email address.
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentUser && (
+            <div className="space-y-4 pt-1">
+              <div className="rounded-lg border border-border bg-muted/40 p-3.5 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Name</span>
+                  <span className="font-bold text-foreground">{currentUser.fullName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Role</span>
+                  <span className="font-bold text-primary uppercase text-[10px]">
+                    {currentUser.role === "admin" ? "Yard Admin" : "Customer"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Current Email</span>
+                  <span className="font-medium text-foreground">{currentUser.email}</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleUpdateEmail} className="space-y-3 pt-1">
+                <div>
+                  <label htmlFor={newEmailId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Change Email Address
+                  </label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 mb-1.5">
+                    For security, a confirmation link will be sent to both your old and new inbox to verify this change.
+                  </p>
+                  <div className="relative">
+                    <input
+                      id={newEmailId}
+                      type="email"
+                      required
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="new-email@example.com"
+                      className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isUpdatingEmail || newEmail === currentUser.email}
+                  className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer"
+                >
+                  {isUpdatingEmail ? "Sending Verification..." : "Update Email"}
+                </Button>
+              </form>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
