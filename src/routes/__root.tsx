@@ -133,7 +133,7 @@ function RootComponent() {
         </main>
         <Footer />
         <WhatsAppButton />
-        <Toaster richColors position="top-right" closeButton />
+        <Toaster richColors position="bottom-right" closeButton className="!bottom-5 sm:!bottom-5 !right-5" />
       </div>
     </QueryClientProvider>
   );

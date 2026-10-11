@@ -1,6 +1,6 @@
-import { useState, useEffect, useId } from "react";
-import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck, Phone, Settings, ShoppingBag, ChevronDown } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useState, useEffect, useId, useRef } from "react";
+import { Lock, Mail, User, AlertCircle, Eye, EyeOff, LogOut, ShieldCheck, Phone, Settings, ShoppingBag, ChevronDown, Camera } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -9,18 +9,22 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured, db } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export interface SessionUser {
   email: string;
   fullName: string;
+  phone?: string;
+  avatarUrl?: string;
   role: "admin" | "customer";
 }
 
 const LOCAL_SESSION_KEY = "seo_autos_active_user";
 
 export function AuthModals() {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [openModal, setOpenModal] = useState<"login" | "signup" | "profile" | null>(null);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [email, setEmail] = useState("");
@@ -36,9 +40,15 @@ export function AuthModals() {
     text: string;
   } | null>(null);
 
-  // Email update state
-  const [newEmail, setNewEmail] = useState("");
-  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  // Manage Profile edit form state (matches user requirements: name, surname, phone, email, password)
+  const [profileFirstName, setProfileFirstName] = useState("");
+  const [profileSurname, setProfileSurname] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profileNewPassword, setProfileNewPassword] = useState("");
+  const [showProfilePassword, setShowProfilePassword] = useState(false);
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const emailId = useId();
@@ -46,7 +56,21 @@ export function AuthModals() {
   const confirmPasswordId = useId();
   const phoneId = useId();
   const nameId = useId();
-  const newEmailId = useId();
+  const profileFirstNameId = useId();
+  const profileSurnameId = useId();
+  const profilePhoneId = useId();
+  const profileEmailId = useId();
+  const profilePasswordId = useId();
+
+  const redirectUser = (role: "admin" | "customer") => {
+    window.dispatchEvent(new Event("auth:changed"));
+    window.dispatchEvent(new Event("storage"));
+    if (role === "admin") {
+      navigate({ to: "/admin" });
+    } else {
+      navigate({ to: "/dashboard" });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = () => setIsUserMenuOpen(false);
@@ -70,32 +94,58 @@ export function AuthModals() {
     }
 
     if (supabase) {
+      const fetchSupabaseUser = async (user: any) => {
+        if (!user) {
+          setCurrentUser(null);
+          localStorage.removeItem(LOCAL_SESSION_KEY);
+          return;
+        }
+
+        let role: "admin" | "customer" =
+          db.isEmailAdmin(user.email || "") || user.user_metadata?.role === "admin"
+            ? "admin"
+            : "customer";
+
+        // Query the profiles table in case updated in Supabase directly
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role, full_name, phone")
+            .eq("id", user.id)
+            .single();
+
+          if (profile?.role === "admin") {
+            role = "admin";
+          }
+        } catch {
+          // ignore profile table error
+        }
+
+        const userObj: SessionUser = {
+          email: user.email || "",
+          fullName: user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
+          phone: user.user_metadata?.phone,
+          avatarUrl: user.user_metadata?.avatar_url,
+          role,
+        };
+        setCurrentUser(userObj);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+        window.dispatchEvent(new Event("auth:changed"));
+      };
+
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          const role = session.user.user_metadata?.role === "admin" ? "admin" : "customer";
-          const userObj: SessionUser = {
-            email: session.user.email || "",
-            fullName: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User",
-            role,
-          };
-          setCurrentUser(userObj);
-          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+          fetchSupabaseUser(session.user);
         }
       });
 
       const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
-          const role = session.user.user_metadata?.role === "admin" ? "admin" : "customer";
-          const userObj: SessionUser = {
-            email: session.user.email || "",
-            fullName: session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "User",
-            role,
-          };
-          setCurrentUser(userObj);
-          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+          fetchSupabaseUser(session.user);
         } else {
           setCurrentUser(null);
           localStorage.removeItem(LOCAL_SESSION_KEY);
+          window.dispatchEvent(new Event("auth:changed"));
         }
       });
 
@@ -126,7 +176,25 @@ export function AuthModals() {
         });
         if (error) throw error;
 
-        const role = data.user.user_metadata?.role === "admin" ? "admin" : "customer";
+        let role: "admin" | "customer" =
+          db.isEmailAdmin(data.user.email || email) || data.user.user_metadata?.role === "admin"
+            ? "admin"
+            : "customer";
+
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+
+          if (profile?.role === "admin") {
+            role = "admin";
+          }
+        } catch {
+          // ignore
+        }
+
         const sessionUser: SessionUser = {
           email: data.user.email || email,
           fullName: data.user.user_metadata?.full_name || email.split("@")[0],
@@ -134,8 +202,10 @@ export function AuthModals() {
         };
         setCurrentUser(sessionUser);
         localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(sessionUser));
+        window.dispatchEvent(new Event("auth:changed"));
         toast.success(`Welcome back, ${sessionUser.fullName}!`);
         closeModal();
+        redirectUser(role);
         return;
       } catch (err: any) {
         const errText = err.message || "Failed to sign in. Please verify credentials.";
@@ -147,7 +217,7 @@ export function AuthModals() {
     }
 
     // Demo local mock login
-    const isAdmin = email.toLowerCase().includes("admin");
+    const isAdmin = db.isEmailAdmin(email);
     const demoUser: SessionUser = {
       email,
       fullName: fullName || email.split("@")[0],
@@ -155,9 +225,10 @@ export function AuthModals() {
     };
     setCurrentUser(demoUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
-    toast.success(`Signed in as ${demoUser.fullName}`);
+    toast.success(`Signed in as ${demoUser.fullName} (${demoUser.role.toUpperCase()})`);
     setIsLoading(false);
     closeModal();
+    redirectUser(demoUser.role);
   };
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
@@ -188,6 +259,8 @@ export function AuthModals() {
     setIsLoading(true);
 
     if (supabase) {
+      const isAppointedAdmin = db.isEmailAdmin(email);
+      const signupRole = isAppointedAdmin ? "admin" : "customer";
       try {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -196,7 +269,7 @@ export function AuthModals() {
             data: {
               full_name: fullName,
               phone: phone,
-              role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+              role: signupRole,
             },
           },
         });
@@ -207,12 +280,13 @@ export function AuthModals() {
           const userObj: SessionUser = {
             email: data.session.user.email || email,
             fullName,
-            role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+            role: signupRole,
           };
           setCurrentUser(userObj);
           localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
           toast.success(`Account created! Welcome, ${fullName}.`);
           closeModal();
+          redirectUser(userObj.role);
         } else {
           // If Supabase project has email confirm enabled, auto sign in or notify cleanly
           try {
@@ -224,12 +298,13 @@ export function AuthModals() {
               const userObj: SessionUser = {
                 email,
                 fullName,
-                role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+                role: signupRole,
               };
               setCurrentUser(userObj);
               localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
               toast.success(`Welcome to SEO Autos, ${fullName}!`);
               closeModal();
+              redirectUser(userObj.role);
               return;
             }
           } catch {
@@ -240,12 +315,13 @@ export function AuthModals() {
           const userObj: SessionUser = {
             email,
             fullName,
-            role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+            role: signupRole,
           };
           setCurrentUser(userObj);
           localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
           toast.success(`Welcome to SEO Autos, ${fullName}!`);
           closeModal();
+          redirectUser(userObj.role);
         }
         setIsLoading(false);
         return;
@@ -259,56 +335,139 @@ export function AuthModals() {
     }
 
     // Demo local mock signup
+    const isAppointedAdmin = db.isEmailAdmin(email);
     const demoUser: SessionUser = {
       email,
       fullName,
-      role: email.toLowerCase().includes("admin") ? "admin" : "customer",
+      role: isAppointedAdmin ? "admin" : "customer",
     };
     setCurrentUser(demoUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoUser));
     toast.success(`Account created! Welcome, ${fullName}.`);
     setIsLoading(false);
     closeModal();
+    redirectUser(demoUser.role);
   };
 
-  const handleUpdateEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmail || newEmail === currentUser?.email) {
-      toast.error("Please enter a new, valid email address.");
-      return;
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    // Check if Supabase storage is configured
+    try {
+      const res = await db.uploadImage(file);
+      if (res.url) {
+        setProfileAvatarUrl(res.url);
+        toast.success("Profile photo uploaded!");
+        return;
+      }
+    } catch {
+      // Fallback to local base64 data URL
     }
 
-    setIsUpdatingEmail(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setProfileAvatarUrl(reader.result);
+        toast.success("Profile photo selected!");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setIsSavingProfile(true);
+
+    const first = profileFirstName.trim();
+    const last = profileSurname.trim();
+    const updatedDisplayName = [first, last].filter(Boolean).join(" ") || currentUser.fullName;
+    const updatedPhone = profilePhone.trim() || currentUser.phone || "";
+    const updatedEmail = profileEmail.trim() || currentUser.email;
 
     if (supabase) {
       try {
-        const { error } = await supabase.auth.updateUser({
-          email: newEmail,
-        });
+        const updatePayload: {
+          email?: string;
+          password?: string;
+          data?: Record<string, any>;
+        } = {
+          data: {
+            first_name: first,
+            last_name: last,
+            full_name: updatedDisplayName,
+            phone: updatedPhone,
+            avatar_url: profileAvatarUrl,
+          },
+        };
+
+        if (profileNewPassword && profileNewPassword.length >= 6) {
+          updatePayload.password = profileNewPassword;
+        }
+
+        if (updatedEmail !== currentUser.email) {
+          updatePayload.email = updatedEmail;
+        }
+
+        const { error } = await supabase.auth.updateUser(updatePayload);
         if (error) throw error;
 
+        // Also update profiles table if configured
+        try {
+          await supabase
+            .from("profiles")
+            .update({
+              full_name: updatedDisplayName,
+              phone: updatedPhone,
+            })
+            .eq("email", currentUser.email);
+        } catch {
+          // table update fallback
+        }
+
+        const updatedUser: SessionUser = {
+          ...currentUser,
+          fullName: updatedDisplayName,
+          phone: updatedPhone,
+          email: updatedEmail,
+          avatarUrl: profileAvatarUrl,
+        };
+
+        setCurrentUser(updatedUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event("auth:changed"));
+        window.dispatchEvent(new Event("storage"));
+
         toast.success(
-          "Confirmation link sent! Please check both your current and new email inbox to confirm the change.",
-          { duration: 6000 }
+          updatedEmail !== currentUser.email
+            ? "Account updated! Check both emails to verify the email change."
+            : "Account details updated successfully!"
         );
         closeModal();
       } catch (err: any) {
-        toast.error(err.message || "Failed to initiate email change.");
+        toast.error(err.message || "Failed to update account.");
       } finally {
-        setIsUpdatingEmail(false);
+        setIsSavingProfile(false);
       }
       return;
     }
 
-    // Demo mode email change
-    if (currentUser) {
-      const updated: SessionUser = { ...currentUser, email: newEmail };
-      setCurrentUser(updated);
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
-      toast.success("Email address updated (Demo Mode).");
-      closeModal();
-    }
-    setIsUpdatingEmail(false);
+    // Demo / Local session update
+    const updatedUser: SessionUser = {
+      ...currentUser,
+      fullName: updatedDisplayName,
+      phone: updatedPhone,
+      email: updatedEmail,
+      avatarUrl: profileAvatarUrl,
+    };
+    setCurrentUser(updatedUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+    window.dispatchEvent(new Event("auth:changed"));
+    window.dispatchEvent(new Event("storage"));
+    toast.success("Account details saved successfully!");
+    setIsSavingProfile(false);
+    closeModal();
   };
 
   const handleSignOut = async () => {
@@ -317,7 +476,26 @@ export function AuthModals() {
     }
     setCurrentUser(null);
     localStorage.removeItem(LOCAL_SESSION_KEY);
+    window.dispatchEvent(new Event("auth:changed"));
+    window.dispatchEvent(new Event("storage"));
     toast.info("You have signed out.");
+    navigate({ to: "/" });
+  };
+
+  const openProfileModal = () => {
+    if (currentUser) {
+      const parts = (currentUser.fullName || "").trim().split(/\s+/);
+      const first = parts[0] || "";
+      const last = parts.slice(1).join(" ") || "";
+      setProfileFirstName(first);
+      setProfileSurname(last);
+      setProfilePhone(currentUser.phone || "");
+      setProfileEmail(currentUser.email);
+      setProfileAvatarUrl(currentUser.avatarUrl || "");
+      setProfileNewPassword("");
+      setShowProfilePassword(false);
+    }
+    setOpenModal("profile");
   };
 
   const closeModal = () => {
@@ -328,68 +506,103 @@ export function AuthModals() {
     setConfirmPassword("");
     setPhone("");
     setFullName("");
-    setNewEmail("");
+    setProfileNewPassword("");
+    setShowProfilePassword(false);
     setIsLoading(false);
-    setIsUpdatingEmail(false);
+    setIsSavingProfile(false);
   };
 
   return (
     <>
       {currentUser ? (
         <div className="relative">
-          {/* User Pill Button (matches screenshot design) */}
+          {/* User Button: Compact circular avatar on mobile, full pill on desktop */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setIsUserMenuOpen(!isUserMenuOpen);
             }}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 shadow-sm transition hover:border-primary/50 hover:bg-card cursor-pointer"
+            aria-label="User account menu"
+            className="group flex items-center rounded-full border border-border/70 bg-card/80 p-0.5 sm:py-1 sm:pl-3 sm:pr-1.5 shadow-sm transition hover:border-border hover:bg-card cursor-pointer"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs uppercase">
-              {currentUser.fullName.charAt(0) || "U"}
+            {/* Left separator line - desktop only */}
+            <div className="hidden sm:block h-6 w-[2px] bg-border/60 -ml-1 rounded-full mr-3" />
+            
+            {/* Name + Role - desktop only */}
+            <div className="hidden sm:flex flex-col text-left leading-tight mr-3">
+              <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors max-w-[120px] truncate">
+                {currentUser.fullName}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                {currentUser.role === "admin" ? "ADMIN" : "CUSTOMER"}
+              </span>
             </div>
-            <span className="text-xs font-bold text-foreground">
-              {currentUser.fullName}
-            </span>
-            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`} />
+
+            {/* Circular avatar badge (visible on all screens; standalone tap target on mobile) */}
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-muted/60 text-foreground font-bold text-xs uppercase shadow-sm group-hover:border-primary/40 group-hover:bg-primary/10 group-hover:text-primary transition overflow-hidden">
+              {currentUser.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-full w-full object-cover" />
+              ) : (
+                currentUser.fullName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("") || (currentUser.role === "admin" ? "AD" : "CU")
+              )}
+            </div>
           </button>
 
-          {/* User Dropdown Menu */}
+          {/* User Dropdown Menu (Dark theme matching reference screenshot) */}
           {isUserMenuOpen && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-card p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 mt-2.5 w-60 rounded-xl border border-zinc-800 bg-[#0e0f11] p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-zinc-200"
             >
               {/* Header Info */}
-              <div className="border-b border-border/80 px-3 py-2.5">
-                <div className="font-bold text-xs text-foreground truncate">
-                  {currentUser.fullName}
+              <div className="flex items-center justify-between border-b border-zinc-800/80 px-3 py-3">
+                <div className="min-w-0 pr-2">
+                  <div className="font-bold text-sm text-white truncate">
+                    {currentUser.role === "admin" ? "Admin" : currentUser.fullName}
+                  </div>
+                  <div className="text-xs text-zinc-400 truncate">
+                    {currentUser.email}
+                  </div>
                 </div>
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {currentUser.role === "admin" ? "Yard Admin" : "Customer Account"}
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-200 font-bold text-xs uppercase border border-zinc-700 overflow-hidden">
+                  {currentUser.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    currentUser.role === "admin"
+                      ? "AD"
+                      : currentUser.fullName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("") || "CU"
+                  )}
                 </div>
               </div>
 
               {/* Menu Items */}
-              <div className="py-1">
+              <div className="py-2 space-y-0.5">
                 {currentUser.role === "admin" ? (
                   <Link
                     to="/admin"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition"
                   >
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <span>Admin Dashboard</span>
+                    <span>ADMIN DASHBOARD</span>
                   </Link>
                 ) : (
                   <Link
                     to="/dashboard"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition"
                   >
                     <ShoppingBag className="h-4 w-4 text-primary" />
-                    <span>My Orders & Bookings</span>
+                    <span>CUSTOMER DASHBOARD</span>
                   </Link>
                 )}
 
@@ -397,28 +610,27 @@ export function AuthModals() {
                   type="button"
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    setNewEmail(currentUser.email);
-                    setOpenModal("profile");
+                    openProfileModal();
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition cursor-pointer"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition cursor-pointer"
                 >
-                  <Settings className="h-4 w-4 text-emerald-500" />
-                  <span>Manage Profile</span>
+                  <Settings className="h-4 w-4 text-emerald-400" />
+                  <span>ACCOUNT SETTINGS</span>
                 </button>
               </div>
 
               {/* Logout Option */}
-              <div className="border-t border-border/80 pt-1">
+              <div className="border-t border-zinc-800/80 pt-1.5">
                 <button
                   type="button"
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     handleSignOut();
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 transition cursor-pointer"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
+                  <span>SIGN OUT</span>
                 </button>
               </div>
             </div>
@@ -719,71 +931,195 @@ export function AuthModals() {
         </DialogContent>
       </Dialog>
 
-      {/* Profile & Change Email Dialog */}
+      {/* Profile Edit Dialog (Exactly styled to user's screenshot) */}
       <Dialog open={openModal === "profile"} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg bg-[#0e0f11] border-zinc-800 text-zinc-100 p-6 sm:p-7 shadow-2xl rounded-2xl">
           <DialogHeader>
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Settings className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-center font-display text-2xl uppercase tracking-wide">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-white">
               Account Settings
             </DialogTitle>
-            <DialogDescription className="text-center text-xs text-muted-foreground">
-              Manage your profile and account email address.
+            <DialogDescription className="text-xs text-zinc-400">
+              Update your name, surname, phone number, email, and password.
             </DialogDescription>
           </DialogHeader>
 
           {currentUser && (
-            <div className="space-y-4 pt-1">
-              <div className="rounded-lg border border-border bg-muted/40 p-3.5 text-xs space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Name</span>
-                  <span className="font-bold text-foreground">{currentUser.fullName}</span>
+            <form onSubmit={handleSaveProfile} className="space-y-5 pt-1">
+              {/* Avatar + Choose Photo */}
+              <div className="flex items-center gap-4">
+                <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-xl font-bold uppercase text-zinc-100 overflow-hidden shadow-inner">
+                  {profileAvatarUrl ? (
+                    <img
+                      src={profileAvatarUrl}
+                      alt={profileFirstName || currentUser.fullName || "User"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>
+                      {profileFirstName?.charAt(0) || currentUser.fullName.charAt(0) || "U"}
+                    </span>
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Role</span>
-                  <span className="font-bold text-primary uppercase text-[10px]">
-                    {currentUser.role === "admin" ? "Yard Admin" : "Customer"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">Current Email</span>
-                  <span className="font-medium text-foreground">{currentUser.email}</span>
+
+                <div className="space-y-1.5">
+                  <div className="text-xs text-zinc-400">
+                    Upload a square PNG or JPG
+                  </div>
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleProfilePhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-zinc-200 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+                    >
+                      <Camera className="h-4 w-4" />
+                      <span>CHOOSE PHOTO</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <form onSubmit={handleUpdateEmail} className="space-y-3 pt-1">
-                <div>
-                  <label htmlFor={newEmailId} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Change Email Address
+              {/* First Name & Surname Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor={profileFirstNameId}
+                    className="block text-xs font-bold text-zinc-200 uppercase tracking-wider"
+                  >
+                    First Name
                   </label>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 mb-1.5">
-                    For security, a confirmation link will be sent to both your old and new inbox to verify this change.
-                  </p>
-                  <div className="relative">
-                    <input
-                      id={newEmailId}
-                      type="email"
-                      required
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      placeholder="new-email@example.com"
-                      className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <input
+                    id={profileFirstNameId}
+                    type="text"
+                    required
+                    value={profileFirstName}
+                    onChange={(e) => setProfileFirstName(e.target.value)}
+                    placeholder="e.g. Josiah"
+                    className="w-full rounded-lg border border-zinc-800 bg-black/60 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor={profileSurnameId}
+                    className="block text-xs font-bold text-zinc-200 uppercase tracking-wider"
+                  >
+                    Surname
+                  </label>
+                  <input
+                    id={profileSurnameId}
+                    type="text"
+                    value={profileSurname}
+                    onChange={(e) => setProfileSurname(e.target.value)}
+                    placeholder="e.g. Adeyemi"
+                    className="w-full rounded-lg border border-zinc-800 bg-black/60 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number (numbers only) */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor={profilePhoneId}
+                  className="block text-xs font-bold text-zinc-200 uppercase tracking-wider"
+                >
+                  Phone Number
+                </label>
+                <input
+                  id={profilePhoneId}
+                  type="tel"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 08138946058"
+                  className="w-full rounded-lg border border-zinc-800 bg-black/60 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                />
+              </div>
+
+              {/* Email Address */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor={profileEmailId}
+                    className="block text-xs font-bold text-zinc-200 uppercase tracking-wider"
+                  >
+                    Email Address
+                  </label>
+                  <span className="text-[10px] text-zinc-400">Confirmation link sent if changed</span>
+                </div>
+                <input
+                  id={profileEmailId}
+                  type="email"
+                  required
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full rounded-lg border border-zinc-800 bg-black/60 px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                />
+              </div>
+
+              {/* CHANGE PASSWORD (OPTIONAL) */}
+              <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                <div>
+                  <div className="text-xs font-extrabold uppercase tracking-wide text-zinc-200">
+                    CHANGE PASSWORD (OPTIONAL)
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    Leave blank if you do not want to change your password
                   </div>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={isUpdatingEmail || newEmail === currentUser.email}
-                  className="w-full rounded-full py-2.5 text-xs font-bold uppercase tracking-wider mt-2 cursor-pointer"
+                <div className="space-y-1">
+                  <label
+                    htmlFor={profilePasswordId}
+                    className="block text-xs font-bold text-zinc-300 uppercase tracking-wider"
+                  >
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id={profilePasswordId}
+                      type={showProfilePassword ? "text" : "password"}
+                      minLength={6}
+                      value={profileNewPassword}
+                      onChange={(e) => setProfileNewPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full rounded-lg border border-zinc-800 bg-black/60 py-2.5 pl-3.5 pr-10 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowProfilePassword(!showProfilePassword)}
+                      className="absolute right-3 top-2.5 text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      {showProfilePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/80">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
                 >
-                  {isUpdatingEmail ? "Sending Verification..." : "Update Email"}
-                </Button>
-              </form>
-            </div>
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="rounded-lg bg-zinc-100 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-900 hover:bg-white shadow transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingProfile ? "SAVING..." : "SAVE CHANGES"}
+                </button>
+              </div>
+            </form>
           )}
         </DialogContent>
       </Dialog>

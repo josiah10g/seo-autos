@@ -17,12 +17,18 @@ export function Footer() {
             SEO Autos Investment Limited
           </p>
         </div>
-        <div className="text-right text-xs text-muted-foreground">
+        <div className="text-right text-xs text-muted-foreground flex flex-col items-end gap-1">
           <a href="tel:+2348138946058" className="block font-semibold text-foreground">+234 813 894 6058</a>
-          <p className="mt-1">© {new Date().getFullYear()}</p>
+          <div className="flex items-center gap-2">
+            <span>© {new Date().getFullYear()}</span>
+            <span>•</span>
+            <a href="/admin" className="hover:text-primary transition underline-offset-4 hover:underline">
+              Staff Portal
+            </a>
+          </div>
         </div>
 
       </div>
     </footer>
-  );5
+  );
 }

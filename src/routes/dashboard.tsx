@@ -46,20 +46,35 @@ function CustomerDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(LOCAL_SESSION_KEY);
-      if (stored) {
-        try {
-          const user = JSON.parse(stored);
-          setCurrentUser(user);
-          loadCustomerBookings(user.email);
-          return;
-        } catch {
-          // ignore
+    const syncUser = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (stored) {
+          try {
+            const user = JSON.parse(stored);
+            setCurrentUser(user);
+            loadCustomerBookings(user.email);
+            setIsLoading(false);
+            return;
+          } catch {
+            // ignore
+          }
         }
+        setCurrentUser(null);
+        setBookings([]);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }
+    };
+
+    syncUser();
+
+    window.addEventListener("auth:changed", syncUser);
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener("auth:changed", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
   }, []);
 
   const loadCustomerBookings = async (userEmail?: string) => {
@@ -144,15 +159,6 @@ function CustomerDashboardPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => currentUser && loadCustomerBookings(currentUser.email)}
-                className="gap-2 rounded-full border-zinc-700 bg-zinc-900/60 text-xs font-bold uppercase tracking-wider text-zinc-200 hover:bg-zinc-800 hover:text-white"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
               <Link
                 to="/"
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow transition hover:bg-primary/90"

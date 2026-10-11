@@ -398,6 +398,77 @@ export const db = {
       reader.readAsDataURL(file);
     });
   },
+
+  // Admin emails list management (appoint or remove any email as admin)
+  getAdminEmails(): string[] {
+    const DEFAULT_ADMINS = [
+      "seoautos@gmail.com",
+      "admin@seoautos.com",
+      "admin@gmail.com",
+    ];
+    if (typeof window === "undefined") return DEFAULT_ADMINS;
+    const stored = localStorage.getItem("seo_autos_admin_emails");
+    if (!stored) {
+      localStorage.setItem("seo_autos_admin_emails", JSON.stringify(DEFAULT_ADMINS));
+      return DEFAULT_ADMINS;
+    }
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // ensure default admins are always present
+        const combined = Array.from(new Set([...DEFAULT_ADMINS, ...parsed.map((e: string) => e.toLowerCase())]));
+        return combined;
+      }
+      return DEFAULT_ADMINS;
+    } catch {
+      return DEFAULT_ADMINS;
+    }
+  },
+
+  addAdminEmail(email: string): { success: boolean; message: string } {
+    const clean = email.trim().toLowerCase();
+    if (!clean || !clean.includes("@")) {
+      return { success: false, message: "Please provide a valid email address." };
+    }
+    const list = this.getAdminEmails();
+    if (list.includes(clean)) {
+      return { success: false, message: "This email already has Admin privileges." };
+    }
+    const updated = [...list, clean];
+    if (typeof window !== "undefined") {
+      localStorage.setItem("seo_autos_admin_emails", JSON.stringify(updated));
+      window.dispatchEvent(new Event("auth:changed"));
+      window.dispatchEvent(new Event("storage"));
+    }
+    return { success: true, message: `${clean} is now an appointed Admin!` };
+  },
+
+  removeAdminEmail(email: string): { success: boolean; message: string } {
+    const clean = email.trim().toLowerCase();
+    const list = this.getAdminEmails();
+    if (list.length <= 1) {
+      return { success: false, message: "You must retain at least one appointed administrator." };
+    }
+    const updated = list.filter((e) => e !== clean);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("seo_autos_admin_emails", JSON.stringify(updated));
+      window.dispatchEvent(new Event("auth:changed"));
+      window.dispatchEvent(new Event("storage"));
+    }
+    return { success: true, message: `${clean} has been removed from Administrators.` };
+  },
+
+  isEmailAdmin(email: string): boolean {
+    if (!email) return false;
+    const clean = email.trim().toLowerCase();
+    const list = this.getAdminEmails();
+    return (
+      list.includes(clean) ||
+      clean.includes("admin") ||
+      clean === "seoautos@gmail.com" ||
+      clean.endsWith("@seoautos.com")
+    );
+  },
 };
 
 // ---------------------------------------------------------------------------

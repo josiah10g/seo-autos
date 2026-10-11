@@ -55,14 +55,18 @@ export function Nav() {
           <AuthModals />
         </div>
 
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border text-foreground lg:hidden"
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        {/* Right side aligned: Mobile User Icon / Auth + Hamburger button */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <AuthModals />
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted transition"
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
 
       </div>
 
@@ -79,9 +83,6 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <div className="pt-4 flex items-center justify-start">
-            <AuthModals />
-          </div>
         </nav>
       )}
     </header>
