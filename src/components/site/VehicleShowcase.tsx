@@ -158,9 +158,11 @@ function VehicleCard({
                   {vehicle.condition}
                 </span>
               </div>
-              <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                {activeImage.label} ({activeImageIndex + 1}/{images.length})
-              </div>
+              {images.length > 1 && (
+                <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
+                  {activeImageIndex + 1} / {images.length}
+                </div>
+              )}
             </div>
 
             {/* Thumbnail switcher */}
@@ -182,9 +184,6 @@ function VehicleCard({
                       alt={img.alt}
                       className="h-full w-full object-cover"
                     />
-                    <span className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] font-medium text-white truncate px-1">
-                      {img.label}
-                    </span>
                   </button>
                 ))}
               </div>

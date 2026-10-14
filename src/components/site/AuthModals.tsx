@@ -933,7 +933,7 @@ export function AuthModals() {
 
       {/* Profile Edit Dialog (Exactly styled to user's screenshot) */}
       <Dialog open={openModal === "profile"} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="sm:max-w-lg bg-[#0e0f11] border-zinc-800 text-zinc-100 p-6 sm:p-7 shadow-2xl rounded-2xl">
+        <DialogContent className="w-[92vw] max-w-lg sm:max-w-md md:max-w-lg bg-[#0e0f11] border-zinc-800 text-zinc-100 p-6 sm:p-7 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-xl uppercase tracking-wider text-white">
               Account Settings

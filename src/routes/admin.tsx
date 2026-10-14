@@ -21,6 +21,9 @@ import {
   UserPlus,
   UserMinus,
   UserCheck,
+  AlertTriangle,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,6 +72,11 @@ function AdminPage() {
   // Vehicle Modal state
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehicleListing | null>(null);
+
+  // Confirmation Card States (Replacing window notifications/confirms)
+  const [vehicleToDelete, setVehicleToDelete] = useState<VehicleListing | null>(null);
+  const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form fields
   const [formName, setFormName] = useState("");
@@ -120,16 +128,21 @@ function AdminPage() {
     }
   };
 
-  const handleRemoveAdmin = (targetEmail: string) => {
-    if (confirm(`Are you sure you want to remove administrator access for ${targetEmail}?`)) {
-      const res = db.removeAdminEmail(targetEmail);
-      if (res.success) {
-        toast.success(res.message);
-        loadAdminEmails();
-      } else {
-        toast.error(res.message);
-      }
+  const confirmRemoveAdmin = (targetEmail: string) => {
+    setAdminToRemove(targetEmail);
+  };
+
+  const handleExecuteRemoveAdmin = () => {
+    if (!adminToRemove) return;
+    const target = adminToRemove;
+    const res = db.removeAdminEmail(target);
+    if (res.success) {
+      toast.success(res.message);
+      loadAdminEmails();
+    } else {
+      toast.error(res.message);
     }
+    setAdminToRemove(null);
   };
 
   useEffect(() => {
@@ -201,7 +214,7 @@ function AdminPage() {
     setFormBadge("Fresh Import");
     setFormCondition("Foreign Used (Tokunbo)");
     setFormPriceStatus("Available on Request");
-    setFormSpecs("Original i-VTEC Engine\nDual AC\nClean Interior\nCustoms Duty Paid");
+    setFormSpecs("");
     setFormImages([]);
     setVehicleModalOpen(true);
   };
@@ -234,7 +247,7 @@ function AdminPage() {
           {
             src: res.url!,
             alt: `${formName || "Vehicle"} photo`,
-            label: prev.length === 0 ? "Front View" : prev.length === 1 ? "Side View" : "Angle View",
+            label: `Photo ${prev.length + 1}`,
           },
         ]);
       }
@@ -244,7 +257,15 @@ function AdminPage() {
 
   const handleSaveVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formYear) return;
+    if (!formName || !formYear) {
+      toast.error("Please provide both model name and year.");
+      return;
+    }
+
+    if (formImages.length === 0) {
+      toast.error("Please upload at least one vehicle photo before saving.");
+      return;
+    }
 
     setIsSaving(true);
     const specsArray = formSpecs
@@ -268,17 +289,8 @@ function AdminPage() {
       priceStatus: formPriceStatus,
       transmission: "Automatic",
       fuel: "Petrol",
-      specs: specsArray.length > 0 ? specsArray : ["Tested engine and transmission", "Sound suspension"],
-      images:
-        formImages.length > 0
-          ? formImages
-          : [
-              {
-                src: "/favicon.png",
-                alt: formName,
-                label: "Main View",
-              },
-            ],
+      specs: specsArray.length > 0 ? specsArray : ["Sound engine and transmission", "Customs duty cleared"],
+      images: formImages,
       isAvailable: true,
     };
 
@@ -298,18 +310,25 @@ function AdminPage() {
     }
   };
 
-  const handleDeleteVehicle = async (id: string) => {
-    if (confirm("Are you sure you want to remove this vehicle from inventory?")) {
-      try {
-        const res = await db.deleteVehicle(id);
-        if (res.success) {
-          toast.success("Vehicle removed from inventory.");
-        } else {
-          toast.error("Failed to delete vehicle.");
-        }
-      } catch (err: any) {
-        toast.error(err.message || "Error deleting vehicle.");
+  const promptDeleteVehicle = (vehicle: VehicleListing) => {
+    setVehicleToDelete(vehicle);
+  };
+
+  const handleExecuteDeleteVehicle = async () => {
+    if (!vehicleToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await db.deleteVehicle(vehicleToDelete.id);
+      if (res.success) {
+        toast.success(`"${vehicleToDelete.name}" removed from inventory.`);
+      } else {
+        toast.error("Failed to delete vehicle.");
       }
+    } catch (err: any) {
+      toast.error(err.message || "Error deleting vehicle.");
+    } finally {
+      setIsDeleting(false);
+      setVehicleToDelete(null);
       loadData();
     }
   };
@@ -513,7 +532,7 @@ function AdminPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteVehicle(v.id)}
+                          onClick={() => promptDeleteVehicle(v)}
                           className="h-8 gap-1 text-xs cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -702,7 +721,7 @@ function AdminPage() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleRemoveAdmin(admEmail)}
+                            onClick={() => confirmRemoveAdmin(admEmail)}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500 hover:text-white transition cursor-pointer"
                           >
                             <UserMinus className="h-3.5 w-3.5" />
@@ -845,54 +864,73 @@ function AdminPage() {
               />
             </div>
 
-            {/* Image Gallery Manager */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Vehicle Photos ({formImages.length})
-                </label>
-                <label className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer">
-                  <Upload className="h-3.5 w-3.5" />
-                  {isUploading ? "Uploading..." : "Upload Photos"}
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={isUploading}
-                  />
-                </label>
+            {/* Vehicle Photos Section with Hover Upload & X Delete */}
+            <div className="space-y-2 pt-1 border-t border-border/80">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Vehicle Photos {formImages.length > 0 && `(${formImages.length})`}
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Upload real, clear photos of the vehicle (front, side, rear, interior).
+                  </p>
+                </div>
               </div>
 
-              {formImages.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                  No photos uploaded yet. Click Upload Photos to add front, side, and rear pictures.
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-3">
+              {/* Photo preview cards with clear 'X' delete buttons */}
+              {formImages.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
                   {formImages.map((img, idx) => (
                     <div
                       key={idx}
-                      className="group relative aspect-video overflow-hidden rounded-md border border-border bg-muted"
+                      className="group relative aspect-video overflow-hidden rounded-xl border border-border bg-muted shadow-sm transition hover:border-primary/50"
                     >
-                      <img src={img.src} alt={img.alt} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 transition group-hover:opacity-100 flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setFormImages(formImages.filter((_, i) => i !== idx))}
-                          className="rounded bg-destructive p-1 text-white hover:bg-destructive/90"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <span className="absolute bottom-1 left-1 bg-black/70 px-1.5 py-0.5 text-[9px] text-white rounded">
-                        {img.label}
+                      <img src={img.src} alt={img.alt} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      
+                      {/* Interactive X Delete Button */}
+                      <button
+                        type="button"
+                        title="Delete photo"
+                        onClick={() => setFormImages(formImages.filter((_, i) => i !== idx))}
+                        className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600/90 text-white shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-red-600 cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+
+                      <span className="absolute bottom-2 left-2 rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+                        Photo {idx + 1}
                       </span>
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* Cool Hover Add Photo Button Under Vehicle Photos */}
+              <label
+                className={`group relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/90 bg-muted/20 px-6 py-6 text-center transition-all duration-200 hover:border-primary hover:bg-primary/5 hover:shadow-md cursor-pointer ${
+                  isUploading ? "opacity-60 pointer-events-none" : ""
+                }`}
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground shadow-sm">
+                  {isUploading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground group-hover:text-primary transition-colors">
+                    {isUploading ? "Uploading photos..." : formImages.length === 0 ? "Upload Vehicle Photos" : "Add More Vehicle Photos"}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground">
+                    Click to select JPG, PNG, or WEBP photos from your device
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+              </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-3 pt-2">
@@ -913,6 +951,96 @@ function AdminPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Website Interactive UI Card for Deleting a Product (Replacing window confirm/notification) */}
+      <Dialog open={Boolean(vehicleToDelete)} onOpenChange={(open) => !open && setVehicleToDelete(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="text-center pt-2">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
+              Delete Vehicle from Yard?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
+              Are you sure you want to delete <strong className="text-foreground">{vehicleToDelete?.name} ({vehicleToDelete?.year})</strong>? This action cannot be undone and customers will no longer see this listing.
+            </DialogDescription>
+          </DialogHeader>
+
+          {vehicleToDelete && (
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs space-y-1 mt-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Category:</span>
+                <span className="font-semibold text-foreground">{vehicleToDelete.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Price Status:</span>
+                <span className="font-semibold text-foreground">{vehicleToDelete.priceStatus}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setVehicleToDelete(null)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={handleExecuteDeleteVehicle}
+              className="font-bold uppercase tracking-wider text-xs gap-1.5 cursor-pointer shadow-md"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? "Deleting..." : "Yes, Delete Product"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Website Interactive UI Card for Removing Admin (Replacing window confirm/notification) */}
+      <Dialog open={Boolean(adminToRemove)} onOpenChange={(open) => !open && setAdminToRemove(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+            <UserMinus className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="text-center pt-2">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
+              Revoke Administrator Access?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
+              Are you sure you want to remove administrator privileges for <strong className="text-foreground">{adminToRemove}</strong>? They will lose access to the inventory and booking dashboard.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setAdminToRemove(null)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleExecuteRemoveAdmin}
+              className="font-bold uppercase tracking-wider text-xs cursor-pointer shadow-md"
+            >
+              Revoke Access
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

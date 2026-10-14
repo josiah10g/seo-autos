@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { LOGO_DATA_URI } from "@/assets/logoData";
 import { AuthModals } from "./AuthModals";
 
-const links = [
+interface SessionUser {
+  email: string;
+  fullName: string;
+  role: "admin" | "customer";
+}
+
+const LOCAL_SESSION_KEY = "seo_autos_active_user";
+
+const baseLinks = [
   { label: "Home", to: "/" },
   { label: "About", to: "/about" },
   { label: "Services", to: "/services" },
@@ -13,6 +21,41 @@ const links = [
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+
+  useEffect(() => {
+    const syncUser = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (stored) {
+          try {
+            setCurrentUser(JSON.parse(stored));
+            return;
+          } catch {
+            // ignore
+          }
+        }
+        setCurrentUser(null);
+      }
+    };
+
+    syncUser();
+    window.addEventListener("auth:changed", syncUser);
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener("auth:changed", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
+
+  const dashboardLink = currentUser
+    ? currentUser.role === "admin"
+      ? { label: "Dashboard", to: "/admin" }
+      : { label: "Dashboard", to: "/dashboard" }
+    : null;
+
+  const links = dashboardLink ? [...baseLinks, dashboardLink] : baseLinks;
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur">
@@ -62,7 +105,7 @@ export function Nav() {
             type="button"
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted transition"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted transition cursor-pointer"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -77,7 +120,7 @@ export function Nav() {
               key={l.to}
               to={l.to}
               onClick={() => setOpen(false)}
-              activeProps={{ className: "text-primary" }}
+              activeProps={{ className: "text-primary font-bold" }}
               className="block border-b border-border/60 py-3 text-sm font-semibold uppercase tracking-wider text-foreground"
             >
               {l.label}

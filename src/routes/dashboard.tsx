@@ -16,8 +16,16 @@ import {
   Clock4,
   ArrowRight,
   MessageCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { db, type BookingRecord, isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -44,6 +52,8 @@ function CustomerDashboardPage() {
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [bookingToCancel, setBookingToCancel] = useState<BookingRecord | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const syncUser = () => {
@@ -89,17 +99,24 @@ function CustomerDashboardPage() {
     }
   };
 
-  const handleCancelOrder = async (id: string) => {
-    if (confirm("Are you sure you want to cancel this inspection request?")) {
-      try {
-        await db.updateBookingStatus(id, "cancelled");
-        toast.success("Inspection booking cancelled.");
-        if (currentUser) {
-          loadCustomerBookings(currentUser.email);
-        }
-      } catch {
-        toast.error("Failed to cancel request.");
+  const promptCancelOrder = (booking: BookingRecord) => {
+    setBookingToCancel(booking);
+  };
+
+  const handleExecuteCancelOrder = async () => {
+    if (!bookingToCancel) return;
+    setIsCancelling(true);
+    try {
+      await db.updateBookingStatus(bookingToCancel.id, "cancelled");
+      toast.success("Inspection booking cancelled.");
+      if (currentUser) {
+        loadCustomerBookings(currentUser.email);
       }
+    } catch {
+      toast.error("Failed to cancel request.");
+    } finally {
+      setIsCancelling(false);
+      setBookingToCancel(null);
     }
   };
 
@@ -334,8 +351,8 @@ function CustomerDashboardPage() {
                     {booking.status === "pending" && (
                       <button
                         type="button"
-                        onClick={() => handleCancelOrder(booking.id)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive transition"
+                        onClick={() => promptCancelOrder(booking)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-destructive transition cursor-pointer"
                       >
                         <XCircle className="h-3.5 w-3.5" />
                         Cancel
@@ -348,6 +365,46 @@ function CustomerDashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Interactive UI Card for Cancelling Booking Request (Replacing window confirm/notification) */}
+      <Dialog open={Boolean(bookingToCancel)} onOpenChange={(open) => !open && setBookingToCancel(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="text-center pt-2">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
+              Cancel Inspection Request?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
+              Are you sure you want to cancel your inspection booking for the <strong className="text-foreground">{bookingToCancel?.vehicle_name}</strong> scheduled for <strong className="text-foreground">{bookingToCancel?.preferred_date}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCancelling}
+              onClick={() => setBookingToCancel(null)}
+              className="cursor-pointer"
+            >
+              Keep Booking
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isCancelling}
+              onClick={handleExecuteCancelOrder}
+              className="font-bold uppercase tracking-wider text-xs gap-1.5 cursor-pointer shadow-md"
+            >
+              <XCircle className="h-4 w-4" />
+              {isCancelling ? "Cancelling..." : "Yes, Cancel Request"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
