@@ -24,6 +24,9 @@ import {
   AlertTriangle,
   ImagePlus,
   X,
+  ChevronLeft,
+  ChevronRight,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +41,7 @@ import {
   supabase,
   type VehicleListing,
   type BookingRecord,
+  type UserProfile,
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -63,12 +67,19 @@ export const Route = createFileRoute("/admin")({
 function AdminPage() {
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"vehicles" | "bookings" | "admins">("vehicles");
+  const [activeTab, setActiveTab] = useState<"vehicles" | "bookings" | "admins" | "users">("vehicles");
   const [vehicles, setVehicles] = useState<VehicleListing[]>([]);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  const [usersList, setUsersList] = useState<UserProfile[]>([]);
   const [newAdminEmailInput, setNewAdminEmailInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination states
+  const [vehiclesPage, setVehiclesPage] = useState(1);
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
   // Vehicle Modal state
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
@@ -77,6 +88,7 @@ function AdminPage() {
   // Confirmation Card States (Replacing window notifications/confirms)
   const [vehicleToDelete, setVehicleToDelete] = useState<VehicleListing | null>(null);
   const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
+  const [userToRemove, setUserToRemove] = useState<UserProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Form fields
@@ -105,9 +117,14 @@ function AdminPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [vData, bData] = await Promise.all([db.getVehicles(), db.getBookings()]);
+      const [vData, bData, uData] = await Promise.all([
+        db.getVehicles(),
+        db.getBookings(),
+        db.getUsers(),
+      ]);
       setVehicles(vData);
       setBookings(bData);
+      setUsersList(uData);
       loadAdminEmails();
     } catch (err) {
       console.error("Failed to load admin data:", err);
@@ -144,6 +161,27 @@ function AdminPage() {
       toast.error(res.message);
     }
     setAdminToRemove(null);
+  };
+
+  const confirmRemoveUser = (user: UserProfile) => {
+    setUserToRemove(user);
+  };
+
+  const handleExecuteRemoveUser = async () => {
+    if (!userToRemove) return;
+    try {
+      const res = await db.removeUser(userToRemove.id || userToRemove.email);
+      if (res.success) {
+        toast.success(res.message);
+        loadData();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove user.");
+    } finally {
+      setUserToRemove(null);
+    }
   };
 
   useEffect(() => {
@@ -452,8 +490,20 @@ function AdminPage() {
                   : "text-white/60 hover:text-white"
               }`}
             >
-              <Users className="h-4 w-4" />
+              <ShieldCheck className="h-4 w-4" />
               Admin Access ({adminEmails.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("users")}
+              className={`flex items-center gap-2 pb-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === "users"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              User Directory ({usersList.length})
             </button>
           </div>
         </div>
@@ -468,12 +518,15 @@ function AdminPage() {
                 Current Yard Stock
               </h2>
               <span className="text-xs text-muted-foreground">
-                Showing {vehicles.length} vehicle(s)
+                Showing {vehicles.length > 0 ? (vehiclesPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
+                {Math.min(vehiclesPage * ITEMS_PER_PAGE, vehicles.length)} of {vehicles.length} vehicle(s)
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {vehicles.map((v) => {
+              {vehicles
+                .slice((vehiclesPage - 1) * ITEMS_PER_PAGE, vehiclesPage * ITEMS_PER_PAGE)
+                .map((v) => {
                 const mainImg = v.images?.[0]?.src || "/favicon.png";
                 return (
                   <div
@@ -544,6 +597,35 @@ function AdminPage() {
                 );
               })}
             </div>
+
+            {/* Vehicles Pagination */}
+            {vehicles.length > ITEMS_PER_PAGE && (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                <span className="text-xs text-muted-foreground">
+                  Page {vehiclesPage} of {Math.ceil(vehicles.length / ITEMS_PER_PAGE)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={vehiclesPage <= 1}
+                    onClick={() => setVehiclesPage((p) => Math.max(1, p - 1))}
+                    className="h-8 gap-1 text-xs cursor-pointer"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={vehiclesPage >= Math.ceil(vehicles.length / ITEMS_PER_PAGE)}
+                    onClick={() => setVehiclesPage((p) => p + 1)}
+                    className="h-8 gap-1 text-xs cursor-pointer"
+                  >
+                    Next <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -566,78 +648,109 @@ function AdminPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {bookings.map((b) => {
-                  const whatsappMsg = encodeURIComponent(
-                    `Hello ${b.customer_name}, this is SEO Autos regarding your inspection request for the ${b.vehicle_name} on ${b.preferred_date}.`
-                  );
-                  return (
-                    <div
-                      key={b.id}
-                      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
-                              b.status === "completed"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                : b.status === "confirmed"
-                                ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                : b.status === "cancelled"
-                                ? "bg-destructive/10 text-destructive"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                            }`}
+                {bookings
+                  .slice((bookingsPage - 1) * ITEMS_PER_PAGE, bookingsPage * ITEMS_PER_PAGE)
+                  .map((b) => {
+                    const whatsappMsg = encodeURIComponent(
+                      `Hello ${b.customer_name}, this is SEO Autos regarding your inspection request for the ${b.vehicle_name} on ${b.preferred_date}.`
+                    );
+                    return (
+                      <div
+                        key={b.id}
+                        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
+                                b.status === "completed"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : b.status === "confirmed"
+                                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                  : b.status === "cancelled"
+                                  ? "bg-destructive/10 text-destructive"
+                                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              }`}
+                            >
+                              {b.status}
+                            </span>
+                            <span className="text-sm font-bold text-foreground">
+                              {b.vehicle_name}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">
+                              👤 {b.customer_name}
+                            </span>
+                            <span>📞 {b.customer_phone}</span>
+                            {b.customer_email && <span>✉️ {b.customer_email}</span>}
+                            <span>📅 {b.preferred_date} ({b.preferred_time || "Flexible"})</span>
+                          </div>
+
+                          {b.notes && (
+                            <p className="mt-1 rounded bg-muted/40 p-2 text-xs italic text-muted-foreground">
+                              "{b.notes}"
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                          <select
+                            value={b.status}
+                            onChange={(e) =>
+                              handleBookingStatusChange(b.id, e.target.value as BookingRecord["status"])
+                            }
+                            className="rounded-md border border-input bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                           >
-                            {b.status}
-                          </span>
-                          <span className="text-sm font-bold text-foreground">
-                            {b.vehicle_name}
-                          </span>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+
+                          <a
+                            href={`https://wa.me/${b.customer_phone.replace(/[^0-9]/g, "")}?text=${whatsappMsg}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#20bd5a]"
+                          >
+                            <Phone className="h-3.5 w-3.5" /> WhatsApp
+                          </a>
                         </div>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            👤 {b.customer_name}
-                          </span>
-                          <span>📞 {b.customer_phone}</span>
-                          {b.customer_email && <span>✉️ {b.customer_email}</span>}
-                          <span>📅 {b.preferred_date} ({b.preferred_time || "Flexible"})</span>
-                        </div>
-
-                        {b.notes && (
-                          <p className="mt-1 rounded bg-muted/40 p-2 text-xs italic text-muted-foreground">
-                            "{b.notes}"
-                          </p>
-                        )}
                       </div>
+                    );
+                  })}
 
-                      <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                        {/* Status switcher */}
-                        <select
-                          value={b.status}
-                          onChange={(e) =>
-                            handleBookingStatusChange(b.id, e.target.value as BookingRecord["status"])
-                          }
-                          className="rounded-md border border-input bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
-
-                        <a
-                          href={`https://wa.me/${b.customer_phone.replace(/[^0-9]/g, "")}?text=${whatsappMsg}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-md bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#20bd5a]"
-                        >
-                          <Phone className="h-3.5 w-3.5" /> WhatsApp
-                        </a>
-                      </div>
+                {/* Bookings Pagination */}
+                {bookings.length > ITEMS_PER_PAGE && (
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                    <span className="text-xs text-muted-foreground">
+                      Showing {(bookingsPage - 1) * ITEMS_PER_PAGE + 1}-
+                      {Math.min(bookingsPage * ITEMS_PER_PAGE, bookings.length)} of {bookings.length} requests
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bookingsPage <= 1}
+                        onClick={() => setBookingsPage((p) => Math.max(1, p - 1))}
+                        className="h-8 gap-1 text-xs cursor-pointer"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={bookingsPage >= Math.ceil(bookings.length / ITEMS_PER_PAGE)}
+                        onClick={() => setBookingsPage((p) => p + 1)}
+                        className="h-8 gap-1 text-xs cursor-pointer"
+                      >
+                        Next <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -734,6 +847,147 @@ function AdminPage() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Total Users Directory & Role Management */}
+        {activeTab === "users" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold uppercase tracking-wide">
+                  Registered Website Users &amp; Roles
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  View all customers and staff registered on SEO Autos, check roles, and manage site access.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
+                  Total Users: {usersList.length}
+                </span>
+                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-400">
+                  Admins: {usersList.filter((u) => u.role === "admin" || db.isEmailAdmin(u.email)).length}
+                </span>
+                <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-400">
+                  Customers: {usersList.filter((u) => u.role !== "admin" && !db.isEmailAdmin(u.email)).length}
+                </span>
+              </div>
+            </div>
+
+            {/* Users Directory Table Card */}
+            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+              <div className="border-b border-border/80 bg-muted/40 px-5 py-3 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  Users Directory ({usersList.length})
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  Showing {usersList.length > 0 ? (usersPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
+                  {Math.min(usersPage * ITEMS_PER_PAGE, usersList.length)} of {usersList.length}
+                </span>
+              </div>
+
+              {usersList.length === 0 ? (
+                <div className="p-12 text-center text-muted-foreground">
+                  <Users className="mx-auto h-10 w-10 opacity-30" />
+                  <p className="mt-2 text-sm font-medium">No registered users found.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {usersList
+                    .slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE)
+                    .map((usr) => {
+                      const isAdm = usr.role === "admin" || db.isEmailAdmin(usr.email);
+                      const isCurrent = currentUser?.email.toLowerCase() === usr.email.toLowerCase();
+
+                      return (
+                        <div
+                          key={usr.id || usr.email}
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 transition hover:bg-muted/20"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm uppercase border border-primary/20 shrink-0">
+                              {(usr.full_name || usr.email).charAt(0)}
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-bold text-sm text-foreground">
+                                  {usr.full_name || "Anonymous User"}
+                                </span>
+                                {isCurrent && (
+                                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-400 border border-emerald-500/30">
+                                    You
+                                  </span>
+                                )}
+                                <span
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${
+                                    isAdm
+                                      ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                                      : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                                  }`}
+                                >
+                                  {isAdm ? "Administrator" : "Customer"}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                                <span>✉️ {usr.email}</span>
+                                {usr.phone && <span>📞 {usr.phone}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            {isCurrent ? (
+                              <span className="text-xs font-medium text-muted-foreground italic pr-2">
+                                Active Session
+                              </span>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => confirmRemoveUser(usr)}
+                                className="h-8 gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                              >
+                                <UserX className="h-3.5 w-3.5" />
+                                Remove User
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Users Pagination */}
+              {usersList.length > ITEMS_PER_PAGE && (
+                <div className="border-t border-border/80 bg-muted/20 px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    Page {usersPage} of {Math.ceil(usersList.length / ITEMS_PER_PAGE)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={usersPage <= 1}
+                      onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                      className="h-8 gap-1 text-xs cursor-pointer"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={usersPage >= Math.ceil(usersList.length / ITEMS_PER_PAGE)}
+                      onClick={() => setUsersPage((p) => p + 1)}
+                      className="h-8 gap-1 text-xs cursor-pointer"
+                    >
+                      Next <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1040,6 +1294,57 @@ function AdminPage() {
               className="font-bold uppercase tracking-wider text-xs cursor-pointer shadow-md"
             >
               Revoke Access
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Website Interactive UI Card for Deleting a User */}
+      <Dialog open={Boolean(userToRemove)} onOpenChange={(open) => !open && setUserToRemove(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+            <UserX className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="text-center pt-2">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
+              Remove User Account?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
+              Are you sure you want to remove <strong className="text-foreground">{userToRemove?.full_name || userToRemove?.email}</strong> from the website?
+              They will no longer be able to log in or access customer features.
+            </DialogDescription>
+          </DialogHeader>
+
+          {userToRemove && (
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs space-y-1 mt-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-semibold text-foreground">{userToRemove.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Role:</span>
+                <span className="font-semibold text-foreground uppercase">{userToRemove.role}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setUserToRemove(null)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleExecuteRemoveUser}
+              className="font-bold uppercase tracking-wider text-xs cursor-pointer shadow-md"
+            >
+              Remove User
             </Button>
           </div>
         </DialogContent>
