@@ -80,10 +80,10 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
         vehicle_name: `${vehicle.year} ${vehicle.name}`,
         customer_name: fullName,
         customer_phone: phone,
-        customer_email: email || undefined,
+        customer_email: email || null,
         preferred_date: date,
-        preferred_time: time,
-        notes: notes || undefined,
+        preferred_time: time || null,
+        notes: notes || null,
         status: "pending",
       });
 

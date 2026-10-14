@@ -78,6 +78,7 @@ export function AuthModals() {
       window.addEventListener("click", handleClickOutside);
       return () => window.removeEventListener("click", handleClickOutside);
     }
+    return undefined;
   }, [isUserMenuOpen]);
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export function AuthModals() {
     }
 
     if (supabase) {
+      const client = supabase;
       const fetchSupabaseUser = async (user: any) => {
         if (!user) {
           setCurrentUser(null);
@@ -108,7 +110,7 @@ export function AuthModals() {
 
         // Query the profiles table in case updated in Supabase directly
         try {
-          const { data: profile } = await supabase
+          const { data: profile } = await client
             .from("profiles")
             .select("role, full_name, phone")
             .eq("id", user.id)
@@ -133,13 +135,13 @@ export function AuthModals() {
         window.dispatchEvent(new Event("auth:changed"));
       };
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      client.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           fetchSupabaseUser(session.user);
         }
       });
 
-      const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const { data: authListener } = client.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
           fetchSupabaseUser(session.user);
         } else {
@@ -153,6 +155,7 @@ export function AuthModals() {
         authListener.subscription.unsubscribe();
       };
     }
+    return undefined;
   }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -177,7 +180,7 @@ export function AuthModals() {
         if (error) throw error;
 
         let role: "admin" | "customer" =
-          db.isEmailAdmin(data.user.email || email) || data.user.user_metadata?.role === "admin"
+          db.isEmailAdmin(data.user.email || email) || data.user.user_metadata?.['role'] === "admin"
             ? "admin"
             : "customer";
 
@@ -197,7 +200,7 @@ export function AuthModals() {
 
         const sessionUser: SessionUser = {
           email: data.user.email || email,
-          fullName: data.user.user_metadata?.full_name || email.split("@")[0],
+          fullName: data.user.user_metadata?.['full_name'] || (email.split("@")[0] ?? "User"),
           role,
         };
         setCurrentUser(sessionUser);
@@ -218,9 +221,10 @@ export function AuthModals() {
 
     // Demo local mock login
     const isAdmin = db.isEmailAdmin(email);
+    const fallbackName = email.split("@")[0] ?? "User";
     const demoUser: SessionUser = {
       email,
-      fullName: fullName || email.split("@")[0],
+      fullName: fullName || fallbackName,
       role: isAdmin ? "admin" : "customer",
     };
     setCurrentUser(demoUser);
@@ -350,8 +354,8 @@ export function AuthModals() {
   };
 
   const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
+    if (!file) return;
     
     // Check if Supabase storage is configured
     try {

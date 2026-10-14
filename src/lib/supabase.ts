@@ -49,8 +49,8 @@ export interface UserProfile {
 }
 
 // Environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabaseUrl = (import.meta.env["VITE_SUPABASE_URL"] as string) || "";
+const supabaseAnonKey = (import.meta.env["VITE_SUPABASE_ANON_KEY"] as string) || "";
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
@@ -141,6 +141,79 @@ export const SEED_VEHICLES: VehicleListing[] = [
 // Local memory storage for offline demo
 const LOCAL_STORAGE_KEY_VEHICLES = "seo_autos_local_vehicles";
 const LOCAL_STORAGE_KEY_BOOKINGS = "seo_autos_local_bookings";
+const LOCAL_STORAGE_KEY_USERS = "seo_autos_registered_users";
+
+const DEFAULT_SEED_USERS: UserProfile[] = [
+  {
+    id: "usr_admin_1",
+    email: "admin@seoautos.com",
+    full_name: "Operations Admin",
+    phone: "+234 813 894 6058",
+    role: "admin",
+  },
+  {
+    id: "usr_admin_2",
+    email: "seoautos@gmail.com",
+    full_name: "Executive Management",
+    phone: "+234 802 829 2837",
+    role: "admin",
+  },
+  {
+    id: "usr_cust_1",
+    email: "babatunde.ade@gmail.com",
+    full_name: "Babatunde Adeyemi",
+    phone: "+234 803 234 5678",
+    role: "customer",
+  },
+  {
+    id: "usr_cust_2",
+    email: "chioma.okeke@yahoo.com",
+    full_name: "Chioma Okeke",
+    phone: "+234 805 987 6543",
+    role: "customer",
+  },
+  {
+    id: "usr_cust_3",
+    email: "emeka.nnamdi@gmail.com",
+    full_name: "Emeka Nnamdi",
+    phone: "+234 814 112 2334",
+    role: "customer",
+  },
+  {
+    id: "usr_cust_4",
+    email: "folake.balogun@outlook.com",
+    full_name: "Folake Balogun",
+    phone: "+234 809 556 7788",
+    role: "customer",
+  },
+  {
+    id: "usr_cust_5",
+    email: "ibrahim.musa@gmail.com",
+    full_name: "Ibrahim Musa",
+    phone: "+234 802 334 9900",
+    role: "customer",
+  },
+];
+
+function getLocalUsers(): UserProfile[] {
+  if (typeof window === "undefined") return DEFAULT_SEED_USERS;
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEY_USERS);
+  if (!stored) {
+    localStorage.setItem(LOCAL_STORAGE_KEY_USERS, JSON.stringify(DEFAULT_SEED_USERS));
+    return DEFAULT_SEED_USERS;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SEED_USERS;
+  } catch {
+    return DEFAULT_SEED_USERS;
+  }
+}
+
+function saveLocalUsers(users: UserProfile[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LOCAL_STORAGE_KEY_USERS, JSON.stringify(users));
+}
 
 function getLocalVehicles(): VehicleListing[] {
   if (typeof window === "undefined") return SEED_VEHICLES;
@@ -468,6 +541,87 @@ export const db = {
       clean === "seoautos@gmail.com" ||
       clean.endsWith("@seoautos.com")
     );
+  },
+
+  // -------------------------------------------------------------------------
+  // USER MANAGEMENT API (Total Users, Role Directory & Deletion)
+  // -------------------------------------------------------------------------
+  async getUsers(): Promise<UserProfile[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, email, full_name, phone, role")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          return data as UserProfile[];
+        }
+      } catch (err) {
+        console.warn("Supabase fetch users fallback to local:", err);
+      }
+    }
+    return getLocalUsers();
+  },
+
+  async removeUser(userIdOrEmail: string): Promise<{ success: boolean; message: string }> {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .delete()
+          .or(`id.eq.${userIdOrEmail},email.eq.${userIdOrEmail}`);
+
+        if (!error) {
+          // Sync with local memory as well
+          const localList = getLocalUsers().filter(
+            (u) => u.id !== userIdOrEmail && u.email.toLowerCase() !== userIdOrEmail.toLowerCase()
+          );
+          saveLocalUsers(localList);
+          return { success: true, message: "User account deleted successfully." };
+        }
+      } catch (err: any) {
+        console.warn("Supabase user deletion error, proceeding with local sync:", err);
+      }
+    }
+
+    const currentList = getLocalUsers();
+    const target = currentList.find(
+      (u) => u.id === userIdOrEmail || u.email.toLowerCase() === userIdOrEmail.toLowerCase()
+    );
+
+    if (!target) {
+      return { success: false, message: "User not found." };
+    }
+
+    const updated = currentList.filter(
+      (u) => u.id !== userIdOrEmail && u.email.toLowerCase() !== userIdOrEmail.toLowerCase()
+    );
+    saveLocalUsers(updated);
+
+    // If target was in admin list, sync admin emails
+    this.removeAdminEmail(target.email);
+
+    return { success: true, message: `User "${target.full_name || target.email}" removed from website.` };
+  },
+
+  registerLocalUser(user: { email: string; fullName: string; phone?: string; role: "admin" | "customer" }) {
+    const list = getLocalUsers();
+    const existingIdx = list.findIndex((u) => u.email.toLowerCase() === user.email.toLowerCase());
+    const userProfile: UserProfile = {
+      id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      email: user.email,
+      full_name: user.fullName,
+      phone: user.phone || null,
+      role: user.role,
+    };
+
+    if (existingIdx >= 0) {
+      list[existingIdx] = { ...list[existingIdx], ...userProfile };
+    } else {
+      list.unshift(userProfile);
+    }
+    saveLocalUsers(list);
   },
 };
 

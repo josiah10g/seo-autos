@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   db,
+  supabase,
   type VehicleListing,
   type BookingRecord,
   isSupabaseConfigured,

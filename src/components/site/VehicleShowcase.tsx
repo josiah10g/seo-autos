@@ -133,7 +133,7 @@ function VehicleCard({
   const images = vehicle.images && vehicle.images.length > 0 ? vehicle.images : [
     { src: "/favicon.png", alt: vehicle.name, label: "Photo" }
   ];
-  const activeImage = images[activeImageIndex] || images[0];
+  const activeImage = images[activeImageIndex] ?? images[0] ?? { src: "/favicon.png", alt: vehicle.name, label: "Photo" };
 
   return (
     <Reveal>
