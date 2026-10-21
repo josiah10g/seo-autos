@@ -22,7 +22,12 @@ export interface SessionUser {
 
 const LOCAL_SESSION_KEY = "seo_autos_active_user";
 
-export function AuthModals() {
+export interface AuthModalsProps {
+  mobileOnly?: boolean;
+  hideOnMobile?: boolean;
+}
+
+export function AuthModals({ mobileOnly = false, hideOnMobile = false }: AuthModalsProps = {}) {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [openModal, setOpenModal] = useState<"login" | "signup" | "profile" | null>(null);
@@ -640,8 +645,31 @@ export function AuthModals() {
             </div>
           )}
         </div>
+      ) : mobileOnly ? (
+        <div className="flex flex-col gap-2 pt-3 border-t border-border/70 mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusMessage(null);
+              setOpenModal("login");
+            }}
+            className="w-full rounded-lg border border-border py-2.5 text-center text-xs font-bold uppercase tracking-wider text-foreground hover:bg-muted transition cursor-pointer"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusMessage(null);
+              setOpenModal("signup");
+            }}
+            className="w-full rounded-lg bg-primary py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-sm hover:bg-primary/90 transition cursor-pointer"
+          >
+            Sign Up
+          </button>
+        </div>
       ) : (
-        <div className="flex items-center gap-2">
+        <div className={`items-center gap-2 ${hideOnMobile ? "hidden lg:flex" : "flex"}`}>
           <button
             type="button"
             onClick={() => {

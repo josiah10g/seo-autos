@@ -170,13 +170,13 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
           <div>
             <DialogHeader className="space-y-1">
               <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                <Calendar className="h-3.5 w-3.5" /> Book Inspection / Purchase
+                <Calendar className="h-3.5 w-3.5" /> Book Engine Inspection / Purchase
               </div>
               <DialogTitle className="font-display text-2xl tracking-wide text-foreground">
                 {vehicle.year} {vehicle.name}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Schedule a physical visit or test-drive at our Lagos yard. No advance payment required.
+                Schedule a physical inspection, compression test, or pickup at our Lagos workshop. No advance commitment required.
               </DialogDescription>
             </DialogHeader>
 

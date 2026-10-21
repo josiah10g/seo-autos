@@ -98,9 +98,9 @@ export function Nav() {
           <AuthModals />
         </div>
 
-        {/* Right side aligned: Mobile User Icon / Auth + Hamburger button */}
+        {/* Right side aligned: Mobile User Avatar (when logged in) + Hamburger button */}
         <div className="flex items-center gap-2 lg:hidden">
-          <AuthModals />
+          {currentUser && <AuthModals />}
           <button
             type="button"
             aria-label="Toggle menu"
@@ -114,7 +114,7 @@ export function Nav() {
       </div>
 
       {open && (
-        <nav className="border-t border-border bg-background px-4 pb-5 pt-2 lg:hidden">
+        <nav className="border-t border-border bg-background px-4 pb-5 pt-2 lg:hidden space-y-1">
           {links.map((l) => (
             <Link
               key={l.to}
@@ -126,6 +126,13 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
+
+          {/* Mobile Login / Sign Up inside Hamburg icon dropdown */}
+          {!currentUser && (
+            <div className="pt-2">
+              <AuthModals mobileOnly />
+            </div>
+          )}
         </nav>
       )}
     </header>

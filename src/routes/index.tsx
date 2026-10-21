@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Hero, WhyUs } from "@/components/site/Sections";
 import { VehicleShowcase } from "@/components/site/VehicleShowcase";
 
-const title = "SEO Autos Investment Limited | Honda & Acura Specialists";
+const title = "SEO Autos Investment Limited | Tested Honda & Acura Engines";
 const description =
-  "SEO Autos Investment Limited sells and buys Honda and Acura vehicles, swaps and installs engines, gearboxes and accessories, and provides car repair services in Lagos, Nigeria.";
+  "Buy genuine, foreign-used (Tokunbo) Honda and Acura engines, VTEC powertrains, and engine components in Lagos, Nigeria with SEO Autos Investment Limited.";
 
 export const Route = createFileRoute("/")({
   head: () => ({

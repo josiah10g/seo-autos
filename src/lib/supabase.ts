@@ -63,83 +63,106 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-// Built-in seed vehicles for offline / fallback
+// Built-in seed engines for offline / fallback
 export const SEED_VEHICLES: VehicleListing[] = [
   {
-    id: "honda-accord-2016",
-    name: "Honda Accord EX-L Sedan",
-    year: "2016 / 2017",
-    tagline: "Sleek Champagne Gold, Clean Interior & Smooth Powertrain",
-    category: "Sedan",
+    id: "acura-3-7l-vtec-v6",
+    name: "Acura 3.7L VTEC V6 Complete Engine",
+    year: "MDX / TL / RL",
+    tagline: "Factory Original 3.7L VTEC High-Output Powertrain (Direct Import)",
+    category: "SUV",
     priceStatus: "Available on Request",
     condition: "Foreign Used (Tokunbo)",
     transmission: "Automatic",
     fuel: "Petrol",
     badge: "Special Arrival",
     specs: [
-      "Original V6 / i-VTEC Engine",
-      "Factory Chilled Dual AC",
-      "Factory Alloy Wheels & Crisp Lights",
-      "Lagos Handover Ready",
+      "Original Acura 3.7L VTEC Top Cover & Intake",
+      "Tested Compression & Untampered Blocks",
+      "Complete Sensors, Injectors & Wiring Loom",
+      "Lagos Yard Handover Ready with Warranty",
     ],
     images: [
       {
-        src: accordFront,
-        alt: "Honda Accord front view in golden champagne finish",
-        label: "Front Fascia",
+        src: "/media_1792581171606.jpg",
+        alt: "Acura 3.7 VTEC V6 complete engine top view",
+        label: "Engine Assembly",
       },
       {
-        src: accordRear,
-        alt: "Honda Accord rear profile and clean trunk view",
-        label: "Rear Profile",
+        src: "/media_1792581155667.jpg",
+        alt: "Acura V6 block and transmission casing assembly",
+        label: "Side & Transmission Mount",
       },
     ],
     description:
-      "A pristine Honda Accord foreign used specimen. Complete with factory alloy rims, sound engine, untampered suspension, and prompt AC cooling. Ready for inspection at SEO Autos yard.",
+      "Original foreign-used (Tokunbo) Acura 3.7-Liter VTEC V6 complete engine. Compression-tested, perfectly preserved internals, untampered cylinder heads, intact wiring loom and complete fuel rail. Ideal replacement for Acura MDX, TL, and RL.",
     isAvailable: true,
   },
   {
-    id: "honda-crv-2015",
-    name: "Honda CR-V Touring AWD",
-    year: "2014 / 2015",
-    tagline: "Solid White SUV, Rugged Handling, Spacious Cabin",
-    category: "SUV",
+    id: "honda-vtec-i-vtec-powertrain",
+    name: "Honda VTEC 2.4L / 3.5L Complete Engine",
+    year: "Accord / CR-V / Pilot",
+    tagline: "Genuine Honda Motor Co. Tested VTEC Engine Block",
+    category: "Sedan",
     priceStatus: "Call for Best Price",
     condition: "Foreign Used (Tokunbo)",
     transmission: "Automatic",
     fuel: "Petrol",
     badge: "Best Seller",
     specs: [
-      "i-VTEC High Efficiency Engine",
-      "Dual-Zone Climate Control",
-      "Reverse Camera & Factory Touchscreen",
-      "Complete Customs Duty Paid",
+      "Authentic Honda Motor Co. VTEC Valve Cover",
+      "Low Mileage Tokunbo Direct Import",
+      "Clean Distributor, Plug Wires & Air Intake",
+      "Includes Installation & Mechanic Advisory",
     ],
     images: [
       {
-        src: crvFront,
-        alt: "Honda CR-V front angle exterior",
-        label: "Front View",
+        src: "/media_1792581130955.jpg",
+        alt: "Honda VTEC valve cover and intake assembly",
+        label: "VTEC Engine Bay",
       },
       {
-        src: crvSide,
-        alt: "Honda CR-V clean side profile and alloy rims",
-        label: "Side Profile",
-      },
-      {
-        src: crvRear,
-        alt: "Honda CR-V tailgate and clean dual lamps",
-        label: "Rear Profile",
+        src: "/media_1792581112397.jpg",
+        alt: "Honda engine block and transmission unit",
+        label: "Block & Transaxle",
       },
     ],
     description:
-      "A family and executive favorite Honda CR-V in excellent running order. High ground clearance, solid Tokunbo chassis, pristine interior upholstery, and tested gearbox.",
+      "A pristine Honda VTEC Tokunbo engine unit imported directly from trusted foreign yards. Complete with original Honda valve cover, intact intake manifold, clean spark leads and full assembly. Available with installation support.",
+    isAvailable: true,
+  },
+  {
+    id: "honda-acura-crankshafts-pistons",
+    name: "Honda & Acura High-Grade Crankshafts & Core Internals",
+    year: "All Compatible Models",
+    tagline: "Matched Factory Crankshafts, Connecting Rods & Piston Sets",
+    category: "All",
+    priceStatus: "Available on Request",
+    condition: "Clean Condition",
+    transmission: "Automatic",
+    fuel: "Petrol",
+    badge: "Direct Stock",
+    specs: [
+      "Precision Balanced Factory Crankshafts",
+      "Heavy-Duty Connecting Rods & Piston Rings",
+      "Micrometer-Inspected Journal Surfaces",
+      "Standard Factory Sizing (STD Ready)",
+    ],
+    images: [
+      {
+        src: "/media_1792581140227.jpg",
+        alt: "Rack of factory crankshafts, connecting rods and engine internals",
+        label: "Crankshafts & Internals",
+      },
+    ],
+    description:
+      "Fully inspected, micrometer-verified Honda and Acura crankshafts and internal rebuild components. Wrapped and rust-inhibited for guaranteed long life and smooth engine rebuilds.",
     isAvailable: true,
   },
 ];
 
 // Local memory storage for offline demo
-const LOCAL_STORAGE_KEY_VEHICLES = "seo_autos_local_vehicles";
+const LOCAL_STORAGE_KEY_VEHICLES = "seo_autos_local_engines_v2";
 const LOCAL_STORAGE_KEY_BOOKINGS = "seo_autos_local_bookings";
 const LOCAL_STORAGE_KEY_USERS = "seo_autos_registered_users";
 

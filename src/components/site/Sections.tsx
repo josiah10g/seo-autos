@@ -26,23 +26,23 @@ export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden bg-brand-ink">
       <img
-        src={heroCar}
-        alt="Red performance sedan in a showroom"
+        src="/media_1792581171606.jpg"
+        alt="Original Honda & Acura VTEC Engine"
         width={1920}
         height={1088}
-        className="absolute inset-0 h-full w-full object-cover opacity-70"
+        className="absolute inset-0 h-full w-full object-cover opacity-35"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-brand-ink via-brand-ink/80 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-brand-ink via-brand-ink/90 to-brand-ink/40" />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:py-36">
         <span className="page-enter inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-secondary-foreground">
-          Honda & Acura specialists
+          Honda &amp; Acura Engine Specialists
         </span>
         <h1 style={{ animationDelay: "90ms" }} className="page-enter mt-6 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl">
-          Sell, buy, swap &
-          <span className="text-secondary"> install</span> with confidence
+          Tested, Tokunbo &amp;
+          <span className="text-secondary"> Complete Engines</span> For Sale
         </h1>
         <p style={{ animationDelay: "180ms" }} className="page-enter mt-5 max-w-xl text-base text-primary-foreground/80 sm:text-lg">
-          SEO Autos Investment Limited handles Honda and Acura vehicles, engines, gearboxes, accessories and general car repairs in Lagos.
+          SEO Autos Investment Limited is your premier destination for genuine, compression-tested Honda and Acura engines, VTEC powertrains, and core rebuild components in Lagos, Nigeria.
         </p>
         <div style={{ animationDelay: "270ms" }} className="page-enter mt-8 flex flex-wrap items-center gap-4 text-primary-foreground">
           <a href="tel:+2348138946058" className="inline-flex items-center gap-2 text-base font-bold">
@@ -170,10 +170,10 @@ export function WhyUs() {
 
 export function AboutStory() {
   const values = [
-    { icon: Users, t: "Customer first", d: "We listen to your budget and needs before recommending any car or part." },
-    { icon: Target, t: "Transparency", d: "We share price and condition details clearly before you decide." },
-    { icon: Award, t: "Quality focus", d: "We only offer vehicles and parts we are happy to stand behind." },
-    { icon: Clock, t: "Reachable", d: "Contact us by phone or email and we will get back to you." },
+    { icon: Users, t: "Customer first", d: "We match the exact engine code and specs needed for your chassis and budget." },
+    { icon: Target, t: "Transparency", d: "Compression test results and condition details shared openly before you buy." },
+    { icon: Award, t: "Quality focus", d: "We only sell verified, tested Tokunbo engines we are proud to warranty." },
+    { icon: Clock, t: "Reachable", d: "Direct telephone and WhatsApp support with fast technical response." },
   ];
 
   return (
@@ -182,21 +182,21 @@ export function AboutStory() {
         <div>
           <SectionHead
             eyebrow="About us"
-            title="Your Honda & Acura partner"
-            copy="SEO Autos Investment Limited helps buyers and owners in Lagos get the right Honda and Acura vehicles, engines, gearboxes and accessories."
+            title="Your Honda & Acura engine partner"
+            copy="SEO Autos Investment Limited is Lagos' specialized provider for genuine, compression-tested Honda and Acura engines, VTEC powertrains, and gearbox assemblies."
             align="left"
           />
           <p className="mt-6 text-muted-foreground">
-            We keep things simple: tell us what you need, we check what is available, and we agree on a fair price. No hidden fees, no stories.
+            We eliminate the guesswork when buying an engine. Every engine unit is inspected for sound compression, untampered heads, pristine crankshaft journals, and clean valvetrains before presentation.
           </p>
           <p className="mt-4 text-muted-foreground">
-            Whether you are buying a vehicle, swapping an engine, replacing a gearbox, fitting accessories or booking a repair, our team will guide you through the process.
+            Whether you need a full replacement engine, a high-output VTEC block, or factory engine internals, our experienced mechanics guide you every step of the way.
           </p>
           <Link
             to="/contact"
             className="mt-8 inline-block rounded-full bg-primary px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-brand transition-transform hover:scale-[1.03]"
           >
-            Work with us
+            Enquire About An Engine
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

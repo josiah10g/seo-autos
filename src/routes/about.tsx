@@ -4,7 +4,7 @@ import { Showcase } from "@/components/site/Showcase";
 
 const title = "About Us | SEO Autos Investment Limited";
 const description =
-  "SEO Autos Investment Limited is a Honda and Acura specialist in Lagos, Nigeria. We sell and buy vehicles, swap and install engines, gearboxes and accessories, and offer car repair services.";
+  "SEO Autos Investment Limited is a Honda and Acura engine supplier in Lagos, Nigeria. We sell tested Tokunbo engines, swap and install powertrains, and offer expert engine solutions.";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -24,7 +24,7 @@ function AboutPage() {
       <PageHeader
         eyebrow="About us"
         title="Who we are"
-        copy="A Honda and Acura specialist in Lagos focused on straight dealing, fair prices and reliable work."
+        copy="A trusted Honda and Acura engine specialist in Lagos focused on compression-tested Tokunbo powertrains, fair pricing, and dependable mechanical work."
       />
       <Showcase />
       <AboutStory />

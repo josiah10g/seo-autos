@@ -79,10 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SEO Autos Investment Limited" },
+      { title: "SEO Autos Investment Limited | Honda & Acura Engines" },
       {
         name: "description",
-        content: "Honda and Acura vehicle sales, engine and gearbox swaps, accessories and car repairs from SEO Autos Investment Limited.",
+        content: "Genuine Honda and Acura complete engines, VTEC powertrains, engine swaps, rebuild internals and gearbox units from SEO Autos Investment Limited in Lagos.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
