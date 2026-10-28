@@ -1,8 +1,10 @@
 {
-  "buildCommand": "cd seo-autos && npm run build && xcopy /E /I /Y .vercel ..\\.vercel 2>nul || cp -r .vercel ../.vercel",
-  "build": {
-    "env": {
-      "DANGEROUSLY_DEPLOY_VULNERABLE_TANSTACK_START_XSS": "1"
+  "buildCommand": "npm run build --workspace=frontend",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }

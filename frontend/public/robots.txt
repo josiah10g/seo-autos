@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://seo-autos.onrender.com/sitemap.xml
+Sitemap: https://seo-autos.vercel.app/sitemap.xml
