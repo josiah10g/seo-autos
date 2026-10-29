@@ -79,7 +79,16 @@ export default function AdminPage() {
   const [vehicleToDelete, setVehicleToDelete] = useState<VehicleListing | null>(null);
   const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
   const [userToRemove, setUserToRemove] = useState<UserProfile | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<BookingRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Add User Modal State
+  const [addUserModalOpen, setAddUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"customer" | "admin">("customer");
+  const [isAddingUser, setIsAddingUser] = useState(false);
 
   // Form fields
   const [formName, setFormName] = useState("");
@@ -171,6 +180,60 @@ export default function AdminPage() {
       toast.error(err.message || "Failed to remove user.");
     } finally {
       setUserToRemove(null);
+    }
+  };
+
+  const handleCreateNewUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserEmail || !newUserEmail.includes("@")) {
+      toast.error("Please provide a valid email address.");
+      return;
+    }
+    setIsAddingUser(true);
+    try {
+      const res = await db.createUser({
+        email: newUserEmail,
+        fullName: newUserName || newUserEmail.split("@")[0],
+        phone: newUserPhone,
+        role: newUserRole,
+      });
+
+      if (res.success) {
+        toast.success(res.message);
+        setNewUserName("");
+        setNewUserEmail("");
+        setNewUserPhone("");
+        setNewUserRole("customer");
+        setAddUserModalOpen(false);
+        loadData();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create user.");
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
+  const confirmDeleteBooking = (b: BookingRecord) => {
+    setBookingToDelete(b);
+  };
+
+  const handleExecuteDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    try {
+      const res = await db.deleteBooking(bookingToDelete.id);
+      if (res.success) {
+        toast.success("Inspection request removed.");
+        loadData();
+      } else {
+        toast.error("Failed to delete request.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error deleting request.");
+    } finally {
+      setBookingToDelete(null);
     }
   };
 
@@ -686,6 +749,16 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                          {b.status === "pending" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleBookingStatusChange(b.id, "confirmed")}
+                              className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                            </Button>
+                          )}
+
                           <select
                             value={b.status}
                             onChange={(e) =>
@@ -694,7 +767,7 @@ export default function AdminPage() {
                             className="rounded-md border border-input bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                           >
                             <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
+                            <option value="confirmed">Confirmed (Approved)</option>
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                           </select>
@@ -707,6 +780,16 @@ export default function AdminPage() {
                           >
                             <Phone className="h-3.5 w-3.5" /> WhatsApp
                           </a>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => confirmDeleteBooking(b)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
+                            title="Delete request"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </div>
                     );
@@ -853,7 +936,13 @@ export default function AdminPage() {
                   View all customers and staff registered on SEO Autos, check roles, and manage site access.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={() => setAddUserModalOpen(true)}
+                  className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-xs cursor-pointer shadow"
+                >
+                  <UserPlus className="h-4 w-4" /> Add New User
+                </Button>
                 <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
                   Total Users: {usersList.length}
                 </span>
@@ -1337,6 +1426,154 @@ export default function AdminPage() {
               Remove User
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Website Interactive UI Card for Deleting an Inspection Request */}
+      <Dialog open={Boolean(bookingToDelete)} onOpenChange={(open) => !open && setBookingToDelete(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+            <Trash2 className="h-7 w-7" />
+          </div>
+
+          <DialogHeader className="text-center pt-2">
+            <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
+              Delete Inspection Request?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
+              Are you sure you want to delete this request for <strong className="text-foreground">{bookingToDelete?.vehicle_name}</strong> by <strong className="text-foreground">{bookingToDelete?.customer_name}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          {bookingToDelete && (
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs space-y-1 mt-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className="font-semibold text-foreground">{bookingToDelete.customer_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Phone:</span>
+                <span className="font-semibold text-foreground">{bookingToDelete.customer_phone}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Date:</span>
+                <span className="font-semibold text-foreground">{bookingToDelete.preferred_date}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBookingToDelete(null)}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleExecuteDeleteBooking}
+              className="font-bold uppercase tracking-wider text-xs cursor-pointer shadow-md"
+            >
+              Delete Request
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Website Interactive UI Modal for Adding a New User */}
+      <Dialog open={addUserModalOpen} onOpenChange={setAddUserModalOpen}>
+        <DialogContent className="sm:max-w-lg bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
+          <div className="flex items-center gap-3 border-b border-border/80 pb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="font-display text-lg uppercase tracking-wider text-foreground">
+                Add New Website User
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Register a new customer account or staff administrator directly from the portal.
+              </DialogDescription>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreateNewUser} className="space-y-4 pt-3">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Babatunde Adeyemi"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. customer@example.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                Phone Number (Optional)
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. +234 803 123 4567"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                Account Role
+              </label>
+              <select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value as "customer" | "admin")}
+                className="w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary cursor-pointer"
+              >
+                <option value="customer">Customer (Access to Dashboard & Orders)</option>
+                <option value="admin">Administrator (Full Admin Portal Access)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/80">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddUserModalOpen(false)}
+                className="cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isAddingUser}
+                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-xs cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                {isAddingUser ? "Creating..." : "Create Account"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

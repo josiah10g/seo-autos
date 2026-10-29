@@ -464,6 +464,25 @@ export const db = {
     return { success: true };
   },
 
+  async deleteBooking(id: string): Promise<{ success: boolean; message: string }> {
+    if (supabase) {
+      try {
+        const { error } = await supabase.from("bookings").delete().eq("id", id);
+        if (!error) {
+          const bookings = getLocalBookings().filter((b) => b.id !== id);
+          saveLocalBookings(bookings);
+          return { success: true, message: "Request deleted successfully." };
+        }
+      } catch (err) {
+        console.warn("Supabase delete booking error (fallback to local):", err);
+      }
+    }
+
+    const bookings = getLocalBookings().filter((b) => b.id !== id);
+    saveLocalBookings(bookings);
+    return { success: true, message: "Request deleted successfully." };
+  },
+
   // Upload image to vehicle-images bucket
   async uploadImage(file: File): Promise<{ url: string | null; error?: string }> {
     if (supabase) {
@@ -500,7 +519,6 @@ export const db = {
     const DEFAULT_ADMINS = [
       "seoautos@gmail.com",
       "admin@seoautos.com",
-      "admin@gmail.com",
     ];
     if (typeof window === "undefined") return DEFAULT_ADMINS;
     const stored = localStorage.getItem("seo_autos_admin_emails");
@@ -510,10 +528,8 @@ export const db = {
     }
     try {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // ensure default admins are always present
-        const combined = Array.from(new Set([...DEFAULT_ADMINS, ...parsed.map((e: string) => e.toLowerCase())]));
-        return combined;
+      if (Array.isArray(parsed)) {
+        return parsed.map((e: string) => e.toLowerCase());
       }
       return DEFAULT_ADMINS;
     } catch {
@@ -536,6 +552,13 @@ export const db = {
       window.dispatchEvent(new Event("auth:changed"));
       window.dispatchEvent(new Event("storage"));
     }
+    // Also update role in local users directory if present
+    const users = getLocalUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === clean);
+    if (existing) {
+      existing.role = "admin";
+      saveLocalUsers(users);
+    }
     return { success: true, message: `${clean} is now an appointed Admin!` };
   },
 
@@ -551,6 +574,13 @@ export const db = {
       window.dispatchEvent(new Event("auth:changed"));
       window.dispatchEvent(new Event("storage"));
     }
+    // Update role in local users directory if present
+    const users = getLocalUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === clean);
+    if (existing) {
+      existing.role = "customer";
+      saveLocalUsers(users);
+    }
     return { success: true, message: `${clean} has been removed from Administrators.` };
   },
 
@@ -558,12 +588,7 @@ export const db = {
     if (!email) return false;
     const clean = email.trim().toLowerCase();
     const list = this.getAdminEmails();
-    return (
-      list.includes(clean) ||
-      clean.includes("admin") ||
-      clean === "seoautos@gmail.com" ||
-      clean.endsWith("@seoautos.com")
-    );
+    return list.includes(clean);
   },
 
   // -------------------------------------------------------------------------
@@ -645,6 +670,53 @@ export const db = {
       list.unshift(userProfile);
     }
     saveLocalUsers(list);
+
+    if (user.role === "admin") {
+      this.addAdminEmail(user.email);
+    }
+  },
+
+  async createUser(user: { email: string; fullName: string; phone?: string; role: "admin" | "customer" }): Promise<{ success: boolean; message: string; user?: UserProfile }> {
+    const cleanEmail = user.email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      return { success: false, message: "Valid email address is required." };
+    }
+
+    const currentUsers = getLocalUsers();
+    if (currentUsers.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, message: `A user with email ${cleanEmail} already exists.` };
+    }
+
+    const newProfile: UserProfile = {
+      id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      email: cleanEmail,
+      full_name: user.fullName.trim() || cleanEmail.split("@")[0],
+      phone: user.phone?.trim() || null,
+      role: user.role,
+    };
+
+    if (supabase) {
+      try {
+        await supabase.from("profiles").insert({
+          id: newProfile.id,
+          email: newProfile.email,
+          full_name: newProfile.full_name,
+          phone: newProfile.phone,
+          role: newProfile.role,
+        });
+      } catch (err) {
+        console.warn("Supabase insert user error (fallback to local):", err);
+      }
+    }
+
+    currentUsers.unshift(newProfile);
+    saveLocalUsers(currentUsers);
+
+    if (user.role === "admin") {
+      this.addAdminEmail(cleanEmail);
+    }
+
+    return { success: true, message: `User "${newProfile.full_name}" added successfully.`, user: newProfile };
   },
 };
 
