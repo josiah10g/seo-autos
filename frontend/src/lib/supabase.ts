@@ -33,7 +33,9 @@ export interface EngineListing {
 export interface BookingRecord {
   id: string;
   vehicle_id?: string | null;
-  vehicle_name: string;
+  vehicle_name?: string;
+  engine_id?: string | null;
+  engine_name?: string;
   customer_name: string;
   customer_phone: string;
   customer_email?: string | null;
@@ -66,9 +68,6 @@ export const isSupabaseConfigured = Boolean(
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
-
-// VehicleListing is kept as an alias for backward compatibility with imports
-export type VehicleListing = EngineListing;
 
 // Built-in seed engines for offline / fallback
 export const SEED_ENGINES: EngineListing[] = [
@@ -428,7 +427,11 @@ export const db = {
           .select("*")
           .order("created_at", { ascending: false });
         if (!error && data) {
-          return data;
+          return data.map((row: any) => ({
+            ...row,
+            engine_name: row.engine_name || row.vehicle_name,
+            engine_id: row.engine_id || row.vehicle_id,
+          }));
         }
       } catch (err) {
         console.warn("Supabase fetch bookings error:", err);
@@ -473,8 +476,8 @@ export const db = {
       try {
         const { error } = await supabase.from("bookings").insert({
           id,
-          vehicle_id: booking.vehicle_id || null,
-          vehicle_name: booking.vehicle_name,
+          vehicle_id: booking.engine_id || booking.vehicle_id || null,
+          vehicle_name: booking.engine_name || booking.vehicle_name || "Engine Model",
           customer_name: booking.customer_name,
           customer_phone: booking.customer_phone,
           customer_email: booking.customer_email || null,
