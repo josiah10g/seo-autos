@@ -10,7 +10,7 @@ export default function ContactPage() {
             We're ready to help
           </h1>
           <p className="mt-4 max-w-2xl text-muted-foreground">
-            Tell us what you need — a Honda or Acura vehicle, an engine or gearbox swap, accessories, or a repair — and we will get back to you.
+            Tell us what you need — a Honda or Acura engine, a gearbox swap, accessories, or a repair — and we will get back to you.
           </p>
         </div>
       </section>

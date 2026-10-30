@@ -1,7 +1,7 @@
 import { MessageCircle } from "lucide-react";
 
 const WHATSAPP_NUMBER = "2348138946058";
-const WHATSAPP_TEXT = "Hi, I want to enquire about Honda/Acura vehicles, parts or repairs.";
+const WHATSAPP_TEXT = "Hi, I want to enquire about Honda/Acura engines, gearboxes or repairs.";
 
 export function WhatsAppButton() {
   return (

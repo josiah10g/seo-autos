@@ -18,16 +18,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { db, type VehicleListing } from "@/lib/supabase";
+import { db, type EngineListing } from "@/lib/supabase";
 import { toast } from "sonner";
 
 interface BookingModalProps {
-  vehicle: VehicleListing | null;
+  engine: EngineListing | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
+export function BookingModal({ engine, isOpen, onClose }: BookingModalProps) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -61,7 +61,7 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
     }
   });
 
-  if (!vehicle) return null;
+  if (!engine) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,8 +76,8 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
     setIsSubmitting(true);
     try {
       const res = await db.createBooking({
-        vehicle_id: vehicle.id,
-        vehicle_name: `${vehicle.year} ${vehicle.name}`,
+        engine_id: engine.id,
+        engine_name: `${engine.year} ${engine.name}`,
         customer_name: fullName,
         customer_phone: phone,
         customer_email: email || null,
@@ -114,7 +114,7 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
   };
 
   const whatsappText = encodeURIComponent(
-    `Hello SEO Autos! I have scheduled an inspection for the ${vehicle.year} ${vehicle.name}. Name: ${fullName}, Date: ${date} (${time}).`
+    `Hello SEO Autos! I have scheduled an inspection for the ${engine.year} ${engine.name}. Name: ${fullName}, Date: ${date} (${time}).`
   );
 
   return (
@@ -131,7 +131,7 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">
                 Thank you, <strong className="text-foreground">{fullName}</strong>. Our team at SEO Autos has registered your visit for the{" "}
-                <span className="font-semibold text-primary">{vehicle.year} {vehicle.name}</span>.
+                <span className="font-semibold text-primary">{engine.year} {engine.name}</span>.
               </DialogDescription>
             </DialogHeader>
 
@@ -173,7 +173,7 @@ export function BookingModal({ vehicle, isOpen, onClose }: BookingModalProps) {
                 <Calendar className="h-3.5 w-3.5" /> Book Engine Inspection / Purchase
               </div>
               <DialogTitle className="font-display text-2xl tracking-wide text-foreground">
-                {vehicle.year} {vehicle.name}
+                {engine.year} {engine.name}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 Schedule a physical inspection, compression test, or pickup at our Lagos workshop. No advance commitment required.

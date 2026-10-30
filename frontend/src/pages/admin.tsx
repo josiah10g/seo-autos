@@ -27,6 +27,8 @@ import {
   ChevronLeft,
   ChevronRight,
   UserX,
+  Search,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +41,7 @@ import {
 import {
   db,
   supabase,
-  type VehicleListing,
+  type EngineListing,
   type BookingRecord,
   type UserProfile,
   isSupabaseConfigured,
@@ -57,8 +59,8 @@ const LOCAL_SESSION_KEY = "seo_autos_active_user";
 export default function AdminPage() {
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"vehicles" | "bookings" | "admins" | "users">("vehicles");
-  const [vehicles, setVehicles] = useState<VehicleListing[]>([]);
+  const [activeTab, setActiveTab] = useState<"engines" | "bookings" | "admins" | "users">("engines");
+  const [engines, setEngines] = useState<EngineListing[]>([]);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
@@ -66,17 +68,21 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Pagination states
-  const [vehiclesPage, setVehiclesPage] = useState(1);
+  const [enginesPage, setEnginesPage] = useState(1);
   const [bookingsPage, setBookingsPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const ITEMS_PER_PAGE = 6;
 
-  // Vehicle Modal state
-  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<VehicleListing | null>(null);
+  // Search & Filter state for Users Directory
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "admin" | "customer">("all");
+
+  // Engine Modal state
+  const [engineModalOpen, setEngineModalOpen] = useState(false);
+  const [editingEngine, setEditingEngine] = useState<EngineListing | null>(null);
 
   // Confirmation Card States (Replacing window notifications/confirms)
-  const [vehicleToDelete, setVehicleToDelete] = useState<VehicleListing | null>(null);
+  const [engineToDelete, setEngineToDelete] = useState<EngineListing | null>(null);
   const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
   const [userToRemove, setUserToRemove] = useState<UserProfile | null>(null);
   const [bookingToDelete, setBookingToDelete] = useState<BookingRecord | null>(null);
@@ -117,11 +123,11 @@ export default function AdminPage() {
     setIsLoading(true);
     try {
       const [vData, bData, uData] = await Promise.all([
-        db.getVehicles(),
+        db.getEngines(),
         db.getBookings(),
         db.getUsers(),
       ]);
-      setVehicles(vData);
+      setEngines(vData);
       setBookings(bData);
       setUsersList(uData);
       loadAdminEmails();
@@ -237,6 +243,26 @@ export default function AdminPage() {
     }
   };
 
+  const handlePromoteToAdmin = (user: UserProfile) => {
+    const res = db.addAdminEmail(user.email);
+    if (res.success) {
+      toast.success(`${user.full_name || user.email} is now an appointed Administrator!`);
+      loadData();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleDemoteAdmin = (user: UserProfile) => {
+    const res = db.removeAdminEmail(user.email);
+    if (res.success) {
+      toast.success(`${user.full_name || user.email} admin privileges revoked.`);
+      loadData();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
   useEffect(() => {
     const syncUser = async () => {
       if (typeof window !== "undefined") {
@@ -296,8 +322,8 @@ export default function AdminPage() {
     };
   }, []);
 
-  const openNewVehicleModal = () => {
-    setEditingVehicle(null);
+  const openNewEngineModal = () => {
+    setEditingEngine(null);
     setFormName("");
     setFormYear(new Date().getFullYear().toString());
     setFormCategory("Sedan");
@@ -308,11 +334,11 @@ export default function AdminPage() {
     setFormPriceStatus("Available on Request");
     setFormSpecs("");
     setFormImages([]);
-    setVehicleModalOpen(true);
+    setEngineModalOpen(true);
   };
 
-  const openEditVehicleModal = (v: VehicleListing) => {
-    setEditingVehicle(v);
+  const openEditEngineModal = (v: EngineListing) => {
+    setEditingEngine(v);
     setFormName(v.name);
     setFormYear(v.year);
     setFormCategory(v.category);
@@ -323,7 +349,7 @@ export default function AdminPage() {
     setFormPriceStatus(v.priceStatus);
     setFormSpecs(v.specs.join("\n"));
     setFormImages(v.images || []);
-    setVehicleModalOpen(true);
+    setEngineModalOpen(true);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,7 +364,7 @@ export default function AdminPage() {
           ...prev,
           {
             src: res.url!,
-            alt: `${formName || "Vehicle"} photo`,
+            alt: `${formName || "Engine"} photo`,
             label: `Photo ${prev.length + 1}`,
           },
         ]);
@@ -347,7 +373,7 @@ export default function AdminPage() {
     setIsUploading(false);
   };
 
-  const handleSaveVehicle = async (e: React.FormEvent) => {
+  const handleSaveEngine = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formYear) {
       toast.error("Please provide both model name and year.");
@@ -355,7 +381,7 @@ export default function AdminPage() {
     }
 
     if (formImages.length === 0) {
-      toast.error("Please upload at least one vehicle photo before saving.");
+      toast.error("Please upload at least one engine photo before saving.");
       return;
     }
 
@@ -366,16 +392,16 @@ export default function AdminPage() {
       .filter(Boolean);
 
     const id =
-      editingVehicle?.id ||
+      editingEngine?.id ||
       `${formName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now().toString().slice(-4)}`;
 
-    const vehicleToSave: VehicleListing = {
+    const engineToSave: EngineListing = {
       id,
       name: formName,
       year: formYear,
       category: formCategory,
       tagline: formTagline || "Inspected and ready for Lagos handover",
-      description: formDescription || "Foreign used Honda/Acura vehicle in sound mechanical order.",
+      description: formDescription || "Foreign used Honda/Acura engine in sound mechanical order.",
       badge: formBadge,
       condition: formCondition,
       priceStatus: formPriceStatus,
@@ -387,40 +413,40 @@ export default function AdminPage() {
     };
 
     try {
-      const res = await db.saveVehicle(vehicleToSave);
+      const res = await db.saveEngine(engineToSave);
       if (res.success) {
-        toast.success(editingVehicle ? "Vehicle updated successfully!" : "Vehicle added to inventory!");
+        toast.success(editingEngine ? "Engine updated successfully!" : "Engine added to inventory!");
       } else {
-        toast.error("Failed to save vehicle. Check connection.");
+        toast.error("Failed to save engine. Check connection.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to save vehicle.");
+      toast.error(err.message || "Failed to save engine.");
     } finally {
       setIsSaving(false);
-      setVehicleModalOpen(false);
+      setEngineModalOpen(false);
       loadData();
     }
   };
 
-  const promptDeleteVehicle = (vehicle: VehicleListing) => {
-    setVehicleToDelete(vehicle);
+  const promptDeleteEngine = (engine: EngineListing) => {
+    setEngineToDelete(engine);
   };
 
-  const handleExecuteDeleteVehicle = async () => {
-    if (!vehicleToDelete) return;
+  const handleExecuteDeleteEngine = async () => {
+    if (!engineToDelete) return;
     setIsDeleting(true);
     try {
-      const res = await db.deleteVehicle(vehicleToDelete.id);
+      const res = await db.deleteEngine(engineToDelete.id);
       if (res.success) {
-        toast.success(`"${vehicleToDelete.name}" removed from inventory.`);
+        toast.success(`"${engineToDelete.name}" removed from inventory.`);
       } else {
-        toast.error("Failed to delete vehicle.");
+        toast.error("Failed to delete engine.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Error deleting vehicle.");
+      toast.error(err.message || "Error deleting engine.");
     } finally {
       setIsDeleting(false);
-      setVehicleToDelete(null);
+      setEngineToDelete(null);
       loadData();
     }
   };
@@ -447,8 +473,8 @@ export default function AdminPage() {
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             {currentUser
-              ? `You are signed in as ${currentUser.fullName} (Customer). Only verified administrators can access the vehicle inventory manager and booking portal.`
-              : "You must be logged in with an administrator account to access the vehicle management dashboard."}
+              ? `You are signed in as ${currentUser.fullName} (Customer). Only verified administrators can access the engine inventory manager and booking portal.`
+              : "You must be logged in with an administrator account to access the engine management dashboard."}
           </p>
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -492,18 +518,18 @@ export default function AdminPage() {
                 SEO Autos Yard Dashboard
               </h1>
               <p className="mt-1 text-xs text-white/70 sm:text-sm">
-                Live inventory administration, customer yard booking requests, and vehicle photos.
+                Live inventory administration, customer yard booking requests, and engine photos.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <Button
                 size="sm"
-                onClick={openNewVehicleModal}
+                onClick={openNewEngineModal}
                 className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                Add Vehicle
+                Add Engine
               </Button>
             </div>
           </div>
@@ -512,15 +538,15 @@ export default function AdminPage() {
           <div className="mt-8 flex gap-3 border-b border-white/10 pb-2">
             <button
               type="button"
-              onClick={() => setActiveTab("vehicles")}
+              onClick={() => setActiveTab("engines")}
               className={`flex items-center gap-2 pb-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === "vehicles"
+                activeTab === "engines"
                   ? "border-b-2 border-primary text-primary"
                   : "text-white/60 hover:text-white"
               }`}
             >
               <Car className="h-4 w-4" />
-              Vehicles Inventory ({vehicles.length})
+              Engines Inventory ({engines.length})
             </button>
             <button
               type="button"
@@ -564,21 +590,21 @@ export default function AdminPage() {
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {activeTab === "vehicles" && (
+        {activeTab === "engines" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold uppercase tracking-wide">
                 Current Yard Stock
               </h2>
               <span className="text-xs text-muted-foreground">
-                Showing {vehicles.length > 0 ? (vehiclesPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
-                {Math.min(vehiclesPage * ITEMS_PER_PAGE, vehicles.length)} of {vehicles.length} vehicle(s)
+                Showing {engines.length > 0 ? (enginesPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
+                {Math.min(enginesPage * ITEMS_PER_PAGE, engines.length)} of {engines.length} engine(s)
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {vehicles
-                .slice((vehiclesPage - 1) * ITEMS_PER_PAGE, vehiclesPage * ITEMS_PER_PAGE)
+              {engines
+                .slice((enginesPage - 1) * ITEMS_PER_PAGE, enginesPage * ITEMS_PER_PAGE)
                 .map((v) => {
                 const mainImg = v.images?.[0]?.src || "/favicon.png";
                 return (
@@ -631,7 +657,7 @@ export default function AdminPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => openEditVehicleModal(v)}
+                          onClick={() => openEditEngineModal(v)}
                           className="h-8 gap-1 text-xs cursor-pointer"
                         >
                           <Edit className="h-3.5 w-3.5" /> Edit
@@ -639,7 +665,7 @@ export default function AdminPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => promptDeleteVehicle(v)}
+                          onClick={() => promptDeleteEngine(v)}
                           className="h-8 gap-1 text-xs cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -651,18 +677,18 @@ export default function AdminPage() {
               })}
             </div>
 
-            {/* Vehicles Pagination */}
-            {vehicles.length > ITEMS_PER_PAGE && (
+            {/* Engines Pagination */}
+            {engines.length > ITEMS_PER_PAGE && (
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
                 <span className="text-xs text-muted-foreground">
-                  Page {vehiclesPage} of {Math.ceil(vehicles.length / ITEMS_PER_PAGE)}
+                  Page {enginesPage} of {Math.ceil(engines.length / ITEMS_PER_PAGE)}
                 </span>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={vehiclesPage <= 1}
-                    onClick={() => setVehiclesPage((p) => Math.max(1, p - 1))}
+                    disabled={enginesPage <= 1}
+                    onClick={() => setEnginesPage((p) => Math.max(1, p - 1))}
                     className="h-8 gap-1 text-xs cursor-pointer"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" /> Previous
@@ -670,8 +696,8 @@ export default function AdminPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={vehiclesPage >= Math.ceil(vehicles.length / ITEMS_PER_PAGE)}
-                    onClick={() => setVehiclesPage((p) => p + 1)}
+                    disabled={enginesPage >= Math.ceil(engines.length / ITEMS_PER_PAGE)}
+                    onClick={() => setEnginesPage((p) => p + 1)}
                     className="h-8 gap-1 text-xs cursor-pointer"
                   >
                     Next <ChevronRight className="h-3.5 w-3.5" />
@@ -697,7 +723,7 @@ export default function AdminPage() {
               <div className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">
                 <Calendar className="mx-auto h-12 w-12 opacity-30" />
                 <p className="mt-3 text-sm font-medium">No inspection requests yet.</p>
-                <p className="text-xs">Customer bookings from the vehicle showcase will appear here.</p>
+                <p className="text-xs">Customer bookings from the engine showcase will appear here.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -705,7 +731,7 @@ export default function AdminPage() {
                   .slice((bookingsPage - 1) * ITEMS_PER_PAGE, bookingsPage * ITEMS_PER_PAGE)
                   .map((b) => {
                     const whatsappMsg = encodeURIComponent(
-                      `Hello ${b.customer_name}, this is SEO Autos regarding your inspection request for the ${b.vehicle_name} on ${b.preferred_date}.`
+                      `Hello ${b.customer_name}, this is SEO Autos regarding your inspection request for the ${b.engine_name} on ${b.preferred_date}.`
                     );
                     return (
                       <div
@@ -728,7 +754,7 @@ export default function AdminPage() {
                               {b.status}
                             </span>
                             <span className="text-sm font-bold text-foreground">
-                              {b.vehicle_name}
+                              {b.engine_name}
                             </span>
                           </div>
 
@@ -957,134 +983,294 @@ export default function AdminPage() {
 
             {/* Users Directory Table Card */}
             <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-              <div className="border-b border-border/80 bg-muted/40 px-5 py-3 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                  Users Directory ({usersList.length})
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  Showing {usersList.length > 0 ? (usersPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
-                  {Math.min(usersPage * ITEMS_PER_PAGE, usersList.length)} of {usersList.length}
-                </span>
-              </div>
+              {/* Search and Filters Bar */}
+              <div className="border-b border-border/80 bg-muted/30 p-4">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                  {/* Search Bar */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search users by name, email, or phone..."
+                      value={userSearchQuery}
+                      onChange={(e) => {
+                        setUserSearchQuery(e.target.value);
+                        setUsersPage(1);
+                      }}
+                      className="w-full rounded-lg border border-input bg-background pl-10 pr-9 py-2 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                    {userSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserSearchQuery("");
+                          setUsersPage(1);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                        title="Clear search"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
 
-              {usersList.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground">
-                  <Users className="mx-auto h-10 w-10 opacity-30" />
-                  <p className="mt-2 text-sm font-medium">No registered users found.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/60">
-                  {usersList
-                    .slice((usersPage - 1) * ITEMS_PER_PAGE, usersPage * ITEMS_PER_PAGE)
-                    .map((usr) => {
-                      const isAdm = usr.role === "admin" || db.isEmailAdmin(usr.email);
-                      const isCurrent = currentUser?.email.toLowerCase() === usr.email.toLowerCase();
-
-                      return (
-                        <div
-                          key={usr.id || usr.email}
-                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 transition hover:bg-muted/20"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm uppercase border border-primary/20 shrink-0">
-                              {(usr.full_name || usr.email).charAt(0)}
-                            </div>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-bold text-sm text-foreground">
-                                  {usr.full_name || "Anonymous User"}
-                                </span>
-                                {isCurrent && (
-                                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-400 border border-emerald-500/30">
-                                    You
-                                  </span>
-                                )}
-                                <span
-                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${
-                                    isAdm
-                                      ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
-                                      : "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                                  }`}
-                                >
-                                  {isAdm ? "Administrator" : "Customer"}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
-                                <span>✉️ {usr.email}</span>
-                                {usr.phone && <span>📞 {usr.phone}</span>}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 self-end sm:self-center">
-                            {isCurrent ? (
-                              <span className="text-xs font-medium text-muted-foreground italic pr-2">
-                                Active Session
-                              </span>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => confirmRemoveUser(usr)}
-                                className="h-8 gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
-                              >
-                                <UserX className="h-3.5 w-3.5" />
-                                Remove User
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-
-              {/* Users Pagination */}
-              {usersList.length > ITEMS_PER_PAGE && (
-                <div className="border-t border-border/80 bg-muted/20 px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    Page {usersPage} of {Math.ceil(usersList.length / ITEMS_PER_PAGE)}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={usersPage <= 1}
-                      onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
-                      className="h-8 gap-1 text-xs cursor-pointer"
+                  {/* Role Filter Buttons */}
+                  <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border border-border/60 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserRoleFilter("all");
+                        setUsersPage(1);
+                      }}
+                      className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md transition cursor-pointer ${
+                        userRoleFilter === "all"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Previous
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={usersPage >= Math.ceil(usersList.length / ITEMS_PER_PAGE)}
-                      onClick={() => setUsersPage((p) => p + 1)}
-                      className="h-8 gap-1 text-xs cursor-pointer"
+                      All ({usersList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserRoleFilter("admin");
+                        setUsersPage(1);
+                      }}
+                      className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md transition cursor-pointer ${
+                        userRoleFilter === "admin"
+                          ? "bg-purple-500 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-purple-400"
+                      }`}
                     >
-                      Next <ChevronRight className="h-3.5 w-3.5" />
-                    </Button>
+                      Admins ({usersList.filter((u) => u.role === "admin" || db.isEmailAdmin(u.email)).length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserRoleFilter("customer");
+                        setUsersPage(1);
+                      }}
+                      className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md transition cursor-pointer ${
+                        userRoleFilter === "customer"
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-blue-400"
+                      }`}
+                    >
+                      Customers ({usersList.filter((u) => u.role !== "admin" && !db.isEmailAdmin(u.email)).length})
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Sub-header info */}
+              {(() => {
+                const query = userSearchQuery.trim().toLowerCase();
+                const filteredUsers = usersList.filter((usr) => {
+                  const isAdm = usr.role === "admin" || db.isEmailAdmin(usr.email);
+                  if (userRoleFilter === "admin" && !isAdm) return false;
+                  if (userRoleFilter === "customer" && isAdm) return false;
+
+                  if (!query) return true;
+                  const nameMatch = (usr.full_name || "").toLowerCase().includes(query);
+                  const emailMatch = usr.email.toLowerCase().includes(query);
+                  const phoneMatch = (usr.phone || "").toLowerCase().includes(query);
+                  return nameMatch || emailMatch || phoneMatch;
+                });
+
+                const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE) || 1;
+                const paginatedUsers = filteredUsers.slice(
+                  (usersPage - 1) * ITEMS_PER_PAGE,
+                  usersPage * ITEMS_PER_PAGE
+                );
+
+                return (
+                  <>
+                    <div className="border-b border-border/80 bg-muted/20 px-5 py-2.5 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        Showing {filteredUsers.length > 0 ? (usersPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
+                        {Math.min(usersPage * ITEMS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""}
+                        {userSearchQuery && ` matching "${userSearchQuery}"`}
+                      </span>
+                      {(userSearchQuery || userRoleFilter !== "all") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserSearchQuery("");
+                            setUserRoleFilter("all");
+                            setUsersPage(1);
+                          }}
+                          className="text-primary hover:underline font-semibold cursor-pointer"
+                        >
+                          Reset Filters
+                        </button>
+                      )}
+                    </div>
+
+                    {filteredUsers.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground">
+                        <Users className="mx-auto h-10 w-10 opacity-30" />
+                        <p className="mt-2 text-sm font-medium">
+                          {userSearchQuery
+                            ? `No users found matching "${userSearchQuery}".`
+                            : "No registered users found."}
+                        </p>
+                        {userSearchQuery && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setUserSearchQuery("");
+                              setUserRoleFilter("all");
+                              setUsersPage(1);
+                            }}
+                            className="mt-3 text-xs"
+                          >
+                            Clear Search
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border/60">
+                        {paginatedUsers.map((usr) => {
+                          const isAdm = usr.role === "admin" || db.isEmailAdmin(usr.email);
+                          const isCurrent = currentUser?.email.toLowerCase() === usr.email.toLowerCase();
+
+                          return (
+                            <div
+                              key={usr.id || usr.email}
+                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 transition hover:bg-muted/20"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm uppercase border border-primary/20 shrink-0">
+                                  {(usr.full_name || usr.email).charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-bold text-sm text-foreground">
+                                      {usr.full_name || "Anonymous User"}
+                                    </span>
+                                    {isCurrent && (
+                                      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-400 border border-emerald-500/30">
+                                        You
+                                      </span>
+                                    )}
+                                    <span
+                                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider border ${
+                                        isAdm
+                                          ? "bg-purple-500/10 text-purple-400 border-purple-500/30"
+                                          : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                                      }`}
+                                    >
+                                      {isAdm ? "Administrator" : "Customer"}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                                    <span>✉️ {usr.email}</span>
+                                    {usr.phone && <span>📞 {usr.phone}</span>}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
+                                {isCurrent ? (
+                                  <span className="text-xs font-medium text-muted-foreground italic pr-2">
+                                    Active Session
+                                  </span>
+                                ) : (
+                                  <>
+                                    {/* Appoint as Admin / Revoke Admin Button */}
+                                    {isAdm ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleDemoteAdmin(usr)}
+                                        className="h-8 gap-1.5 text-xs font-bold uppercase tracking-wider text-purple-400 border-purple-500/30 hover:bg-purple-500/10 cursor-pointer"
+                                        title="Revoke admin access for this user"
+                                      >
+                                        <UserMinus className="h-3.5 w-3.5" />
+                                        Revoke Admin
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handlePromoteToAdmin(usr)}
+                                        className="h-8 gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer"
+                                        title="Appoint this user as an Administrator"
+                                      >
+                                        <ShieldCheck className="h-3.5 w-3.5" />
+                                        Appoint Admin
+                                      </Button>
+                                    )}
+
+                                    {/* Delete User Button */}
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => confirmRemoveUser(usr)}
+                                      className="h-8 gap-1.5 text-xs font-bold uppercase tracking-wider cursor-pointer"
+                                    >
+                                      <UserX className="h-3.5 w-3.5" />
+                                      Remove
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Users Pagination */}
+                    {filteredUsers.length > ITEMS_PER_PAGE && (
+                      <div className="border-t border-border/80 bg-muted/20 px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <span className="text-xs text-muted-foreground">
+                          Page {usersPage} of {totalPages}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={usersPage <= 1}
+                            onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                            className="h-8 gap-1 text-xs cursor-pointer"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={usersPage >= totalPages}
+                            onClick={() => setUsersPage((p) => p + 1)}
+                            className="h-8 gap-1 text-xs cursor-pointer"
+                          >
+                            Next <ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
       </main>
 
-      {/* Vehicle Form Modal */}
-      <Dialog open={vehicleModalOpen} onOpenChange={setVehicleModalOpen}>
+      {/* Engine Form Modal */}
+      <Dialog open={engineModalOpen} onOpenChange={setEngineModalOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl uppercase tracking-wide">
-              {editingVehicle ? "Edit Vehicle" : "Add Vehicle to Inventory"}
+              {editingEngine ? "Edit Engine" : "Add Engine to Inventory"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Configure vehicle specifications, upload gallery photos, and set display tags.
+              Configure engine specifications, upload gallery photos, and set display tags.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveVehicle} className="mt-4 space-y-4">
+          <form onSubmit={handleSaveEngine} className="mt-4 space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
@@ -1178,7 +1364,7 @@ export default function AdminPage() {
               </label>
               <textarea
                 rows={3}
-                placeholder="Full vehicle story, customs inspection status, mechanical health notes..."
+                placeholder="Full engine story, customs inspection status, mechanical health notes..."
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -1198,15 +1384,15 @@ export default function AdminPage() {
               />
             </div>
 
-            {/* Vehicle Photos Section with Hover Upload & X Delete */}
+            {/* Engine Photos Section with Hover Upload & X Delete */}
             <div className="space-y-2 pt-1 border-t border-border/80">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    Vehicle Photos {formImages.length > 0 && `(${formImages.length})`}
+                    Engine Photos {formImages.length > 0 && `(${formImages.length})`}
                   </label>
                   <p className="text-[11px] text-muted-foreground">
-                    Upload real, clear photos of the vehicle (front, side, rear, interior).
+                    Upload real, clear photos of the engine (front, side, rear, interior).
                   </p>
                 </div>
               </div>
@@ -1239,7 +1425,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* Cool Hover Add Photo Button Under Vehicle Photos */}
+              {/* Cool Hover Add Photo Button Under Engine Photos */}
               <label
                 className={`group relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/90 bg-muted/20 px-6 py-6 text-center transition-all duration-200 hover:border-primary hover:bg-primary/5 hover:shadow-md cursor-pointer ${
                   isUploading ? "opacity-60 pointer-events-none" : ""
@@ -1250,7 +1436,7 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-0.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-foreground group-hover:text-primary transition-colors">
-                    {isUploading ? "Uploading photos..." : formImages.length === 0 ? "Upload Vehicle Photos" : "Add More Vehicle Photos"}
+                    {isUploading ? "Uploading photos..." : formImages.length === 0 ? "Upload Engine Photos" : "Add More Engine Photos"}
                   </span>
                   <p className="text-[11px] text-muted-foreground">
                     Click to select JPG, PNG, or WEBP photos from your device
@@ -1271,7 +1457,7 @@ export default function AdminPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setVehicleModalOpen(false)}
+                onClick={() => setEngineModalOpen(false)}
                 className="cursor-pointer"
               >
                 Cancel
@@ -1281,7 +1467,7 @@ export default function AdminPage() {
                 disabled={isSaving}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold cursor-pointer"
               >
-                {isSaving ? "Saving..." : editingVehicle ? "Update Vehicle" : "Publish to Yard"}
+                {isSaving ? "Saving..." : editingEngine ? "Update Engine" : "Publish to Yard"}
               </Button>
             </div>
           </form>
@@ -1289,7 +1475,7 @@ export default function AdminPage() {
       </Dialog>
 
       {/* Website Interactive UI Card for Deleting a Product (Replacing window confirm/notification) */}
-      <Dialog open={Boolean(vehicleToDelete)} onOpenChange={(open) => !open && setVehicleToDelete(null)}>
+      <Dialog open={Boolean(engineToDelete)} onOpenChange={(open) => !open && setEngineToDelete(null)}>
         <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground p-6 shadow-2xl rounded-2xl">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
             <AlertTriangle className="h-7 w-7" />
@@ -1297,22 +1483,22 @@ export default function AdminPage() {
 
           <DialogHeader className="text-center pt-2">
             <DialogTitle className="font-display text-xl uppercase tracking-wider text-foreground">
-              Delete Vehicle from Yard?
+              Delete Engine from Yard?
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
-              Are you sure you want to delete <strong className="text-foreground">{vehicleToDelete?.name} ({vehicleToDelete?.year})</strong>? This action cannot be undone and customers will no longer see this listing.
+              Are you sure you want to delete <strong className="text-foreground">{engineToDelete?.name} ({engineToDelete?.year})</strong>? This action cannot be undone and customers will no longer see this listing.
             </DialogDescription>
           </DialogHeader>
 
-          {vehicleToDelete && (
+          {engineToDelete && (
             <div className="rounded-xl border border-border/70 bg-muted/30 p-3.5 text-xs space-y-1 mt-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Category:</span>
-                <span className="font-semibold text-foreground">{vehicleToDelete.category}</span>
+                <span className="font-semibold text-foreground">{engineToDelete.category}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price Status:</span>
-                <span className="font-semibold text-foreground">{vehicleToDelete.priceStatus}</span>
+                <span className="font-semibold text-foreground">{engineToDelete.priceStatus}</span>
               </div>
             </div>
           )}
@@ -1322,7 +1508,7 @@ export default function AdminPage() {
               type="button"
               variant="outline"
               disabled={isDeleting}
-              onClick={() => setVehicleToDelete(null)}
+              onClick={() => setEngineToDelete(null)}
               className="cursor-pointer"
             >
               Cancel
@@ -1331,7 +1517,7 @@ export default function AdminPage() {
               type="button"
               variant="destructive"
               disabled={isDeleting}
-              onClick={handleExecuteDeleteVehicle}
+              onClick={handleExecuteDeleteEngine}
               className="font-bold uppercase tracking-wider text-xs gap-1.5 cursor-pointer shadow-md"
             >
               <Trash2 className="h-4 w-4" />
@@ -1440,7 +1626,7 @@ export default function AdminPage() {
               Delete Inspection Request?
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1 leading-relaxed">
-              Are you sure you want to delete this request for <strong className="text-foreground">{bookingToDelete?.vehicle_name}</strong> by <strong className="text-foreground">{bookingToDelete?.customer_name}</strong>?
+              Are you sure you want to delete this request for <strong className="text-foreground">{bookingToDelete?.engine_name}</strong> by <strong className="text-foreground">{bookingToDelete?.customer_name}</strong>?
             </DialogDescription>
           </DialogHeader>
 

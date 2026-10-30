@@ -14,6 +14,7 @@ import ServicesPage from "@/pages/services";
 import ContactPage from "@/pages/contact";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
+import CartPage from "@/pages/cart";
 
 function NotFound() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/cart" element={<CartPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />

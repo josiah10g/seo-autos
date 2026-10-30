@@ -5,13 +5,17 @@ import crvFront from "@/assets/car-crv-front.jpg";
 import crvRear from "@/assets/car-crv-rear.jpg";
 import crvSide from "@/assets/car-crv-side.jpg";
 
-export interface VehicleListing {
+// VehicleListing is kept as an alias for backward compatibility with imports
+export type VehicleListing = EngineListing;
+
+export interface EngineListing {
   id: string;
   name: string;
   year: string;
   tagline: string;
   category: "Sedan" | "SUV" | "All";
   priceStatus: "Available on Request" | "Call for Best Price";
+  price?: number;
   condition: "Foreign Used (Tokunbo)" | "Clean Condition";
   transmission: "Automatic";
   fuel: "Petrol";
@@ -63,8 +67,40 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// VehicleListing is kept as an alias for backward compatibility with imports
+export type VehicleListing = EngineListing;
+
 // Built-in seed engines for offline / fallback
-export const SEED_VEHICLES: VehicleListing[] = [
+export const SEED_ENGINES: EngineListing[] = [
+  {
+    id: "honda-high-grade-gearbox-fwd",
+    name: "Honda HIGH GRADE gearbox — FWD",
+    year: "Accord / Civic / CR-V",
+    tagline: "Tested Smooth Shift Tokunbo Automatic Front-Wheel-Drive Gearbox",
+    category: "Sedan",
+    priceStatus: "Available on Request",
+    price: 287500,
+    condition: "Foreign Used (Tokunbo)",
+    transmission: "Automatic",
+    fuel: "Petrol",
+    badge: "Fast Mover",
+    specs: [
+      "Precision-Tested Solenoids & Valve Body",
+      "Torque Converter Included & Flushed",
+      "Direct Bolt-on for 4-Cylinder FWD Honda Models",
+      "Tested Gear Engagement with Handover Warranty",
+    ],
+    images: [
+      {
+        src: "/media_1792581112397.jpg",
+        alt: "Honda HIGH GRADE gearbox assembly",
+        label: "Gearbox Unit",
+      },
+    ],
+    description:
+      "Original foreign-used (Tokunbo) Honda high-grade front-wheel drive (FWD) automatic transmission. Factory-tested pressure, zero slip, intact electrical sensors and clean fluid casing.",
+    isAvailable: true,
+  },
   {
     id: "acura-3-7l-vtec-v6",
     name: "Acura 3.7L VTEC V6 Complete Engine",
@@ -72,6 +108,7 @@ export const SEED_VEHICLES: VehicleListing[] = [
     tagline: "Factory Original 3.7L VTEC High-Output Powertrain (Direct Import)",
     category: "SUV",
     priceStatus: "Available on Request",
+    price: 1850000,
     condition: "Foreign Used (Tokunbo)",
     transmission: "Automatic",
     fuel: "Petrol",
@@ -160,6 +197,8 @@ export const SEED_VEHICLES: VehicleListing[] = [
     isAvailable: true,
   },
 ];
+
+export const SEED_VEHICLES = SEED_ENGINES;
 
 // Local memory storage for offline demo
 const LOCAL_STORAGE_KEY_VEHICLES = "seo_autos_local_engines_v2";
@@ -367,6 +406,17 @@ export const db = {
     const list = getLocalVehicles().filter((v) => v.id !== id);
     saveLocalVehicles(list);
     return { success: true };
+  },
+
+  // Aliases for engine nomenclature
+  async getEngines(): Promise<EngineListing[]> {
+    return this.getVehicles();
+  },
+  async saveEngine(engine: EngineListing): Promise<{ success: boolean; error?: string }> {
+    return this.saveVehicle(engine);
+  },
+  async deleteEngine(id: string): Promise<{ success: boolean; error?: string }> {
+    return this.deleteVehicle(id);
   },
 
   // Bookings

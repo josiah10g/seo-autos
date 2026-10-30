@@ -121,7 +121,7 @@ export default function CustomerDashboardPage() {
             Customer Dashboard
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Please log in or create an account to view and manage your vehicle inspection orders and bookings.
+            Please log in or create an account to view and manage your engine inspection orders and bookings.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
@@ -161,7 +161,7 @@ export default function CustomerDashboardPage() {
                 My Orders & Bookings
               </h1>
               <p className="mt-1 text-sm text-zinc-300">
-                Welcome, <strong className="text-white">{currentUser?.fullName}</strong>. Track your in-person vehicle inspections and car purchase requests.
+                Welcome, <strong className="text-white">{currentUser?.fullName}</strong>. Track your in-person engine inspections and engine purchase requests.
               </p>
             </div>
 
@@ -171,7 +171,7 @@ export default function CustomerDashboardPage() {
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow transition hover:bg-primary/90"
               >
                 <Car className="h-3.5 w-3.5" />
-                Browse Vehicles
+                Browse Engines
               </Link>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function CustomerDashboardPage() {
               No orders yet
             </h3>
             <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-              You haven't requested any vehicle inspections yet. Browse our Honda and Acura collection to book a visit.
+              You haven't requested any engine inspections yet. Browse our Honda and Acura collection to book a visit.
             </p>
             <div className="mt-6">
               <Link
@@ -284,7 +284,7 @@ export default function CustomerDashboardPage() {
                   className="flex flex-col justify-between rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                 >
                   <div className="space-y-4">
-                    {/* Header: Vehicle Name & Status */}
+                    {/* Header: Engine Model & Status */}
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">

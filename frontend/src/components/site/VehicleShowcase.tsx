@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react";
-import { Phone, Check, Sparkles, Calendar } from "lucide-react";
+import { Phone, Check, Sparkles, Calendar, ShoppingCart } from "lucide-react";
 import { WhatsAppLink } from "./WhatsAppButton";
 import { Reveal } from "./Reveal";
 import { BookingModal } from "./BookingModal";
-import { db, type VehicleListing, SEED_VEHICLES } from "@/lib/supabase";
+import { db, type EngineListing, SEED_VEHICLES } from "@/lib/supabase";
+import { addToCart, formatNaira } from "@/lib/cart";
+import { toast } from "sonner";
 
-export { type VehicleListing };
+export { type EngineListing, EngineShowcase as VehicleShowcase };
 
-export function VehicleShowcase() {
+export function EngineShowcase() {
   const [filter, setFilter] = useState<"All" | "Sedan" | "SUV">("All");
-  const [vehicles, setVehicles] = useState<VehicleListing[]>(SEED_VEHICLES);
-  const [selectedVehicleForBooking, setSelectedVehicleForBooking] = useState<VehicleListing | null>(null);
+  const [engines, setEngines] = useState<EngineListing[]>(SEED_VEHICLES);
+  const [selectedEngineForBooking, setSelectedEngineForBooking] = useState<EngineListing | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    db.getVehicles().then((data) => {
+    db.getEngines().then((data) => {
       if (isMounted && data && data.length > 0) {
-        setVehicles(data);
+        setEngines(data);
       }
     });
     return () => {
@@ -24,16 +26,16 @@ export function VehicleShowcase() {
     };
   }, []);
 
-  const filteredVehicles =
+  const filteredEngines =
     filter === "All"
-      ? vehicles.filter((v) => v.isAvailable !== false)
-      : vehicles.filter((v) => v.isAvailable !== false && v.category === filter);
+      ? engines.filter((v) => v.isAvailable !== false)
+      : engines.filter((v) => v.isAvailable !== false && v.category === filter);
 
   return (
     <section id="inventory" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <Reveal className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.22em] text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> Direct Stock & Tested Powertrains
+          <Sparkles className="h-3.5 w-3.5" /> Direct Stock &amp; Tested Powertrains
         </span>
         <h2 className="mt-3 font-display text-3xl font-bold uppercase tracking-tight text-foreground sm:text-5xl">
           Available Honda &amp; Acura Engines
@@ -66,17 +68,17 @@ export function VehicleShowcase() {
       </Reveal>
 
       <div className="mt-12 space-y-16">
-        {filteredVehicles.length === 0 ? (
+        {filteredEngines.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             No engines found in this category. Check back soon or request a custom engine import.
           </div>
         ) : (
-          filteredVehicles.map((vehicle, idx) => (
-            <VehicleCard
-              key={vehicle.id}
-              vehicle={vehicle}
+          filteredEngines.map((engine, idx) => (
+            <EngineCard
+              key={engine.id}
+              engine={engine}
               reversed={idx % 2 === 1}
-              onBookVisit={() => setSelectedVehicleForBooking(vehicle)}
+              onBookVisit={() => setSelectedEngineForBooking(engine)}
             />
           ))
         )}
@@ -84,9 +86,9 @@ export function VehicleShowcase() {
 
       {/* Booking Modal */}
       <BookingModal
-        vehicle={selectedVehicleForBooking}
-        isOpen={Boolean(selectedVehicleForBooking)}
-        onClose={() => setSelectedVehicleForBooking(null)}
+        engine={selectedEngineForBooking}
+        isOpen={Boolean(selectedEngineForBooking)}
+        onClose={() => setSelectedEngineForBooking(null)}
       />
 
       {/* Direct assistance banner */}
@@ -123,21 +125,41 @@ export function VehicleShowcase() {
   );
 }
 
-function VehicleCard({
-  vehicle,
+function EngineCard({
+  engine,
   reversed = false,
   onBookVisit,
 }: {
-  vehicle: VehicleListing;
+  engine: EngineListing;
   reversed?: boolean;
   onBookVisit: () => void;
 }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const images = vehicle.images && vehicle.images.length > 0 ? vehicle.images : [
-    { src: "/favicon.png", alt: vehicle.name, label: "Photo" }
+  const images = engine.images && engine.images.length > 0 ? engine.images : [
+    { src: "/favicon.png", alt: engine.name, label: "Photo" }
   ];
-  const activeImage = images[activeImageIndex] ?? images[0] ?? { src: "/favicon.png", alt: vehicle.name, label: "Photo" };
+  const activeImage = images[activeImageIndex] ?? images[0] ?? { src: "/favicon.png", alt: engine.name, label: "Photo" };
+
+  const itemPrice = engine.price || 287500;
+
+  const handleAddToCart = () => {
+    addToCart({
+      id: engine.id,
+      name: engine.name,
+      price: itemPrice,
+      category: engine.category,
+      image: images[0]?.src,
+    });
+    toast.success(`Added ${engine.name} to cart!`, {
+      action: {
+        label: "View Cart",
+        onClick: () => {
+          window.location.href = "/cart";
+        },
+      },
+    });
+  };
 
   return (
     <Reveal>
@@ -156,10 +178,10 @@ function VehicleCard({
               />
               <div className="absolute left-3 top-3 flex items-center gap-2">
                 <span className="rounded-full bg-brand-ink/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground backdrop-blur">
-                  {vehicle.badge}
+                  {engine.badge}
                 </span>
                 <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-secondary-foreground">
-                  {vehicle.condition}
+                  {engine.condition}
                 </span>
               </div>
               {images.length > 1 && (
@@ -198,7 +220,7 @@ function VehicleCard({
           <div className={`p-6 sm:p-8 lg:col-span-5 ${reversed ? "lg:col-start-1" : ""}`}>
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                {vehicle.year} • {vehicle.category}
+                {engine.year} • {engine.category}
               </span>
               <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                 Verified Clean
@@ -206,25 +228,25 @@ function VehicleCard({
             </div>
 
             <h3 className="mt-2 font-display text-2xl font-bold uppercase tracking-wide text-foreground sm:text-3xl">
-              {vehicle.name}
+              {engine.name}
             </h3>
 
             <p className="mt-1 text-sm font-semibold text-secondary-foreground/90">
-              {vehicle.tagline}
+              {engine.tagline}
             </p>
 
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              {vehicle.description}
+              {engine.description}
             </p>
 
             {/* Spec highlights */}
-            {vehicle.specs && vehicle.specs.length > 0 && (
+            {engine.specs && engine.specs.length > 0 && (
               <div className="mt-6 border-y border-border/80 py-4">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Key Highlights
                 </span>
                 <ul className="mt-2 grid grid-cols-1 gap-2 text-xs font-medium text-foreground sm:grid-cols-2">
-                  {vehicle.specs.map((spec, i) => (
+                  {engine.specs.map((spec, i) => (
                     <li key={i} className="flex items-center gap-2">
                       <Check className="h-4 w-4 shrink-0 text-primary" />
                       <span>{spec}</span>
@@ -236,6 +258,16 @@ function VehicleCard({
 
             {/* Price and CTA Buttons */}
             <div className="mt-6 flex flex-col gap-2.5">
+              {/* Add to Cart button */}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary bg-primary/10 px-6 py-3 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Add to Cart ({formatNaira(itemPrice)})
+              </button>
+
               <button
                 type="button"
                 onClick={onBookVisit}
@@ -247,7 +279,7 @@ function VehicleCard({
 
               <div className="flex gap-2">
                 <WhatsAppLink
-                  text={`Hello SEO Autos, I am interested in purchasing/inspecting the ${vehicle.name} (${vehicle.year}). Please share current pricing and availability.`}
+                  text={`Hello SEO Autos, I am interested in purchasing/inspecting the ${engine.name} (${engine.year}). Please share current pricing and availability.`}
                   className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:bg-muted"
                 >
                   WhatsApp Inquire

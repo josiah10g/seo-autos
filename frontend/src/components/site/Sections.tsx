@@ -62,8 +62,8 @@ export function Inventory() {
     <section id="inventory" className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <SectionHead
         eyebrow="Inventory"
-        title="Honda & Acura vehicles"
-        copy="We sell and buy Honda and Acura vehicles. Stock changes often, so call or send an enquiry to see what is available right now."
+        title="Honda & Acura engines"
+        copy="We supply, swap and install genuine Honda and Acura complete engines. Stock changes often, so call or send an enquiry to see what is available right now."
       />
       <Reveal>
         <div className="mt-10 rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/10">
@@ -115,7 +115,7 @@ export function Parts() {
           <SectionHead
             eyebrow="Parts & repairs"
             title="Engines, gearboxes & accessories"
-            copy="We swap and install engines and gearboxes, supply accessories and carry out general car repairs for Honda and Acura vehicles."
+            copy="We swap and install engines and gearboxes, supply accessories and carry out general car repairs for Honda and Acura engines and cars."
             align="left"
           />
           <ul className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -143,7 +143,7 @@ export function Parts() {
 
 export function WhyUs() {
   const items = [
-    { icon: Car, t: "Honda & Acura focus", d: "We specialize in Honda and Acura vehicles and their parts." },
+    { icon: Car, t: "Honda & Acura focus", d: "We specialize in Honda and Acura engines, gearboxes and components." },
     { icon: BadgeCheck, t: "Straight pricing", d: "We agree on one clear price with no surprise charges." },
     { icon: Wrench, t: "Install & repair", d: "We do the work — not just supply the parts." },
     { icon: Truck, t: "Local handover", d: "Pick up your purchase in Lagos, or arrange your own transport." },

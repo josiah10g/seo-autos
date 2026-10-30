@@ -805,7 +805,7 @@ export function AuthModals({ mobileOnly = false, hideOnMobile = false }: AuthMod
               Create an Account
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              Register your details to schedule vehicle inspections and receive personalized inventory updates.
+              Register your details to schedule engine inspections and receive personalized inventory updates.
             </DialogDescription>
           </DialogHeader>
 
