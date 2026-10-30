@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, Trash2, ArrowLeft, Plus, CheckCircle2 } from "lucide-react";
+import { MessageCircle, Trash2, ArrowLeft, Plus, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
   type CartItem,
@@ -19,6 +19,8 @@ export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>(getStoredCart());
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Sync cart from events and localStorage
   useEffect(() => {
@@ -26,24 +28,36 @@ export default function CartPage() {
       setItems(getStoredCart());
     };
 
-    // Auto-fill customer details from session if logged in
-    const storedUser = localStorage.getItem("seo_autos_active_user");
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser);
-        if (u.fullName) setCustomerName(u.fullName);
-        if (u.phone) setCustomerPhone(u.phone);
-      } catch {
-        // ignore
+    const syncAuth = () => {
+      const storedUser = localStorage.getItem("seo_autos_active_user");
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          setCurrentUser(u);
+          if (u.fullName) setCustomerName(u.fullName);
+          if (u.phone) setCustomerPhone(u.phone);
+        } catch {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
       }
-    }
+      setAuthChecked(true);
+    };
+
+    syncCart();
+    syncAuth();
 
     window.addEventListener("cart:changed", syncCart);
+    window.addEventListener("auth:changed", syncAuth);
     window.addEventListener("storage", syncCart);
+    window.addEventListener("storage", syncAuth);
 
     return () => {
       window.removeEventListener("cart:changed", syncCart);
+      window.removeEventListener("auth:changed", syncAuth);
       window.removeEventListener("storage", syncCart);
+      window.removeEventListener("storage", syncAuth);
     };
   }, []);
 
@@ -100,6 +114,32 @@ export default function CartPage() {
     window.dispatchEvent(new CustomEvent("cart:changed", { detail: DEFAULT_DEMO_CART }));
     toast.success("Added Honda HIGH GRADE gearbox to cart!");
   };
+
+  if (authChecked && !currentUser) {
+    return (
+      <div className="min-h-screen bg-background py-16 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-md text-center rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 font-display text-2xl font-bold uppercase text-foreground">
+            Sign In Required
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You must be signed in with an account to view and access your shopping cart.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-xs font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+            >
+              Go to Home &amp; Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-10 px-4 sm:px-6 lg:px-8">

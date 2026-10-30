@@ -135,6 +135,23 @@ function EngineCard({
   onBookVisit: () => void;
 }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      if (typeof window !== "undefined") {
+        const user = localStorage.getItem("seo_autos_active_user");
+        setIsLoggedIn(Boolean(user));
+      }
+    };
+    checkAuth();
+    window.addEventListener("auth:changed", checkAuth);
+    window.addEventListener("storage", checkAuth);
+    return () => {
+      window.removeEventListener("auth:changed", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
 
   const images = engine.images && engine.images.length > 0 ? engine.images : [
     { src: "/favicon.png", alt: engine.name, label: "Photo" }
@@ -258,15 +275,17 @@ function EngineCard({
 
             {/* Price and CTA Buttons */}
             <div className="mt-6 flex flex-col gap-2.5">
-              {/* Add to Cart button */}
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary bg-primary/10 px-6 py-3 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Add to Cart ({formatNaira(itemPrice)})
-              </button>
+              {/* Add to Cart button (Only shown for authenticated users) */}
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary bg-primary/10 px-6 py-3 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Add to Cart ({formatNaira(itemPrice)})
+                </button>
+              )}
 
               <button
                 type="button"

@@ -111,38 +111,42 @@ export function Nav() {
 
           <div className="h-4 w-px bg-border" />
 
-          {/* Cart Icon & Button */}
-          <Link
-            to="/cart"
-            className="relative inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-foreground hover:border-primary/50 hover:bg-muted transition cursor-pointer"
-            aria-label="View Cart"
-          >
-            <ShoppingCart className="h-4 w-4 text-primary" />
-            <span>Cart</span>
-            {cartCount > 0 && (
-              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {/* Cart Icon & Button (Only visible for logged in users) */}
+          {currentUser && (
+            <Link
+              to="/cart"
+              className="relative inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-foreground hover:border-primary/50 hover:bg-muted transition cursor-pointer"
+              aria-label="View Cart"
+            >
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           <AuthModals />
         </div>
 
-        {/* Right side aligned: Mobile Cart + Mobile User Avatar + Hamburger button */}
+        {/* Right side aligned: Mobile Cart (if logged in) + Mobile User Avatar + Hamburger button */}
         <div className="flex items-center gap-2 lg:hidden">
-          <Link
-            to="/cart"
-            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted transition cursor-pointer"
-            aria-label="View Cart"
-          >
-            <ShoppingCart className="h-5 w-5 text-primary" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {currentUser && (
+            <Link
+              to="/cart"
+              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted transition cursor-pointer"
+              aria-label="View Cart"
+            >
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
           {currentUser && <AuthModals />}
           <button
             type="button"
@@ -173,22 +177,24 @@ export function Nav() {
             </NavLink>
           ))}
 
-          {/* Cart link in mobile drawer */}
-          <Link
-            to="/cart"
-            onClick={() => setOpen(false)}
-            className="flex items-center justify-between border-b border-border/60 py-3 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
-          >
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-primary" />
-              <span>Cart</span>
-            </div>
-            {cartCount > 0 && (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                {cartCount} items
-              </span>
-            )}
-          </Link>
+          {/* Cart link in mobile drawer (Only when logged in) */}
+          {currentUser && (
+            <Link
+              to="/cart"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between border-b border-border/60 py-3 text-sm font-semibold uppercase tracking-wider text-foreground hover:text-primary"
+            >
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-primary" />
+                <span>Cart</span>
+              </div>
+              {cartCount > 0 && (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                  {cartCount} items
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Mobile Login / Sign Up inside Hamburg icon dropdown */}
           {!currentUser && (
